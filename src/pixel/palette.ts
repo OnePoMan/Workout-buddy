@@ -23,14 +23,19 @@ export const C = {
   glass_d: hex('a8102a'),
   lens: hex('ffe9ef'),
   eye: hex('2c1530'),
+  // Workout outfit: teal track jacket, pink sports tank, dark joggers, white sneakers.
   top: hex('20c9d0'),
   top_d: hex('0f8d9e'),
   top_dd: hex('0b5f78'),
   top_l: hex('8af5ef'),
-  pants: hex('2e2f78'),
-  pants_d: hex('1c1b4d'),
+  zip: hex('d4fbf7'),
+  pants: hex('3d3756'),
+  pants_d: hex('29243d'),
+  stripe: hex('e8e4f0'),
   sock: hex('ff5fa8'),
   sock_d: hex('c4307a'),
+  shoe: hex('f8f4f0'),
+  sole: hex('cfc8de'),
   mouth: hex('a8344a'),
 } as const;
 

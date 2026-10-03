@@ -3,7 +3,7 @@
  * hand-drawn head and torso sprites, procedurally drawn jointed limbs.
  */
 import { PixelBuffer, sprite, type Point } from '../buffer';
-import { TRANSPARENT, type Color } from '../color';
+import type { Color } from '../color';
 import { C } from '../palette';
 
 const PAL: Record<string, Color> = {
@@ -12,7 +12,7 @@ const PAL: Record<string, Color> = {
   r: C.glass, R: C.glass_d, w: C.lens, e: C.eye, m: C.mouth,
   t: C.top, T: C.top_d, U: C.top_dd, y: C.top_l,
   p: C.pants, P: C.pants_d, k: C.sock, K: C.sock_d,
-  W: C.white,
+  W: C.white, z: C.zip, g: C.gold, n: C.shoe, d: C.sole,
 };
 
 // Head facing right (3/4). Chin at row 18; neck pivot col 10.
@@ -81,22 +81,24 @@ export function head(expr: Expression = 'normal'): PixelBuffer {
   return im;
 }
 
+// Track jacket open at the neck over a pink tank (k), centre zip (z) with a
+// gold pull (g), elastic hem, then jogger waistband with drawstrings (W).
 const TORSO = [
   '......oSSo......',
-  '....ootWWtTo....',
-  '..ootyyyttTTTo..',
-  '.otyyttttttTTTo.',
-  '.otytttttttTTTo.',
-  '.otytttttttTTTo.',
-  '.otyttttttttTTo.',
-  '.otyttttttttTTo.',
-  '.otytttttttTTUo.',
-  '.otytttttttTTUo.',
-  '..otttttttTTUo..',
-  '..otttttttTTUo..',
-  '..oytytytyTyUo..',
+  '....otykkyTo....',
+  '..ootyykkytTTo..',
+  '.otyytttgttTTTo.',
+  '.otyttttzttTTTo.',
+  '.otyttttzttTTTo.',
+  '.otyttttzttTTTo.',
+  '.otyttttzttTTTo.',
+  '.otyttttzttTTUo.',
+  '.otyttttzttTTUo.',
+  '..otttttzTTTUo..',
+  '..otttttzTTTUo..',
+  '..oTTTTTzTTTUo..',
   '..oooooooooooo..',
-  '..oppppppppPPo..',
+  '..oppppWpWppPo..',
   '..opppppppPPPo..',
 ];
 
@@ -120,6 +122,33 @@ function limb(b: PixelBuffer, pts: Point[], fill: Color, shade: Color | null, wi
   }
 }
 
+/** Sleeve pushed up to the elbow: jacket on the upper arm, bare forearm. */
+function arm(b: PixelBuffer, pts: Point[], sleeve: Color, forearm: Color, shade: Color | null): void {
+  const [sh, el, ha] = pts as [Point, Point, Point];
+  b.polyline(pts, C.ink, 5);
+  b.line(el[0], el[1], ha[0], ha[1], forearm, 3);
+  b.line(sh[0], sh[1], el[0], el[1], sleeve, 3);
+  if (shade !== null) {
+    b.line(sh[0] - 1, sh[1] + 1, el[0] - 1, el[1] + 1, shade);
+    b.line(sh[0], sh[1], el[0], el[1], sleeve);
+  }
+}
+
+/** Joggers: side stripe down the near leg and a ribbed cuff at the ankle. */
+function joggerDetails(b: PixelBuffer, pts: Point[], stripe: boolean): void {
+  const ankle = pts[pts.length - 1]!;
+  if (stripe) {
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const [x0, y0] = pts[i]!;
+      const [x1, y1] = pts[i + 1]!;
+      // Stop the stripe short of the cuff.
+      const end = i + 2 === pts.length ? 0.7 : 1;
+      b.line(x0, y0 + 1, x0 + (x1 - x0) * end, y0 + (y1 - y0) * end, C.stripe);
+    }
+  }
+  b.line(ankle[0], ankle[1] - 1, ankle[0], ankle[1], C.pants_d, 5);
+}
+
 function hand(b: PixelBuffer, x: number, y: number, r = 1): void {
   x = Math.round(x);
   y = Math.round(y);
@@ -128,13 +157,22 @@ function hand(b: PixelBuffer, x: number, y: number, r = 1): void {
   b.set(x - 1, y + 1, C.skin_d);
 }
 
+// White sneaker pointing right, pink sock at the heel and a pink side accent.
+const SNEAKER = [
+  '..oooo...',
+  '.okWnno..',
+  'oknnnnnoo',
+  'onnnkkkno',
+  'odddddddo',
+  '.ooooooo.',
+];
+
+let sneakerCache: PixelBuffer | null = null;
+
+/** Sneaker with its sole on y and heel at x - 3. */
 function foot(b: PixelBuffer, x: number, y: number): void {
-  x = Math.round(x);
-  y = Math.round(y);
-  b.rect(x - 3, y - 3, x + 4, y, C.ink);
-  b.rect(x - 2, y - 2, x + 4, y - 1, C.sock);
-  b.set(x + 4, y, TRANSPARENT);
-  b.line(x - 2, y - 1, x + 3, y - 1, C.sock_d);
+  sneakerCache ??= sprite(SNEAKER, PAL);
+  b.blit(sneakerCache, Math.round(x) - 3, Math.round(y) - 5);
 }
 
 // Local frame: 60x80 canvas, feet baseline at y=76, body centre x=28.
@@ -173,15 +211,17 @@ export function renderCharacter(pose: Pose): PixelBuffer {
 
   for (const it of pose.itemsBack ?? []) it(b, ox, oy + bdy);
   limb(b, P(pose.legFar), C.pants_d, null, 5);
+  joggerDetails(b, P(pose.legFar), false);
   foot(b, ox + end(pose.legFar)[0], oy + end(pose.legFar)[1] + 2);
-  limb(b, P(pose.armFar, bdy), C.top_d, null, 3);
+  arm(b, P(pose.armFar, bdy), C.top_d, C.skin_d, null);
   hand(b, ox + end(pose.armFar)[0], oy + end(pose.armFar)[1] + bdy);
   limb(b, P(pose.legNear), C.pants, C.pants_d, 5);
+  joggerDetails(b, P(pose.legNear), true);
   foot(b, ox + end(pose.legNear)[0], oy + end(pose.legNear)[1] + 2);
   b.blit(torso(), ox - 8 + (pose.torsoDx ?? 0), oy - 39 + bdy);
   b.blit(head(pose.head), ox - 11 + (pose.headDx ?? 0), oy - 58 + bdy + (pose.headDy ?? 0));
   for (const it of pose.itemsMid ?? []) it(b, ox, oy + bdy);
-  limb(b, P(pose.armNear, bdy), C.top, C.top_d, 3);
+  arm(b, P(pose.armNear, bdy), C.top, C.skin, C.top_d);
   hand(b, ox + end(pose.armNear)[0], oy + end(pose.armNear)[1] + bdy);
   for (const it of pose.itemsFront ?? []) it(b, ox, oy + bdy);
   return (pose.facing ?? 1) < 0 ? b.flipX() : b;

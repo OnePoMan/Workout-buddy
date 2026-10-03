@@ -226,8 +226,10 @@ achievement stores the date it was earned and a `seen` flag.
 ## 6. Room and character progression
 
 ### 6.1 Character
-- Reuses the video character: brown hair, red glasses, teal top, navy pants,
-  pink socks.
+- Reuses the video character: brown hair and red glasses, now in workout
+  clothes: a teal zip-up track jacket with sleeves pushed to the elbows, a
+  pink sports tank at the neckline, dark joggers with a side stripe,
+  drawstring and ankle cuffs, and white sneakers with pink accents.
 - The head and torso are ASCII sprites. The arms and legs are drawn as jointed
   lines, as in `character.py`.
 
@@ -253,7 +255,7 @@ achievement stores the date it was earned and a `seen` flag.
 | Pull-up bar in the doorway | BACK rank 2 | Room |
 | Yoga mat | LEGS rank 2 | Room |
 | Dumbbells on the floor | STRENGTH rank 3 | Room |
-| Running shoes | STAMINA rank 2 | Outfit |
+| Neon running shoes (replace the white sneakers) | STAMINA rank 2 | Outfit |
 | Headband | First perfect week | Outfit |
 | Trophy shelf (shows top personal bests) | First personal best | Room |
 | Wall calendar (shows the streak number) | Streak 6 | Room |

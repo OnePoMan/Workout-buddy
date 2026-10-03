@@ -10,6 +10,9 @@ import { ProgressBar } from '../components/ProgressBar';
 import { Stepper } from '../components/Stepper';
 import { useStopwatch, type Stopwatch } from '../hooks/useStopwatch';
 import { useSave, useStoreApi } from '../hooks/useStore';
+import { useRewards } from '../rewards/RewardsContext';
+import { sessionClearedToast } from '../../domain/rewards';
+import { sessionPoints } from '../../domain/rules';
 
 interface Props {
   slot: Slot;
@@ -19,6 +22,7 @@ interface Props {
 
 export function LogSheet({ slot, today, onClose }: Props) {
   const store = useStoreApi();
+  const rewards = useRewards();
   const { sessions, settings } = useSave();
   const existing = findSession(sessions, slot.day);
   const target = targetFor(slot, existing, settings);
@@ -109,6 +113,11 @@ export function LogSheet({ slot, today, onClose }: Props) {
       final.durationSec = isRun ? Math.round(sec) : Math.round(sec * 10) / 10;
     }
     saveSession(store, final);
+    const before = completionFraction(existing);
+    if (before < 1 && completionFraction(final) >= 1) {
+      const points = sessionPoints(slot.exercise, 1) - sessionPoints(slot.exercise, before);
+      rewards.push(sessionClearedToast(slot.exercise, points, `clear:${slot.day}:${final.updatedAt}`));
+    }
     onClose();
   };
 

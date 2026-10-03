@@ -4,7 +4,6 @@ const DAY_MS = 86_400_000;
 const DAY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 const WEEKDAY_SHORT = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
-const MONTH_SHORT = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'] as const;
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -64,10 +63,16 @@ export function weekdayLabel(day: LogicalDay): string {
   return WEEKDAY_SHORT[weekday(day)]!;
 }
 
-/** "SAT • OCT 3" */
+/** "SAT 10/3": weekday plus calendar month/day. */
 export function dayLabel(day: LogicalDay): string {
   const d = new Date(toUtcMs(day));
-  return `${weekdayLabel(day)} • ${MONTH_SHORT[d.getUTCMonth()]} ${d.getUTCDate()}`;
+  return `${weekdayLabel(day)} ${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+}
+
+/** "10/3/2026". */
+export function fullDate(day: LogicalDay): string {
+  const d = new Date(toUtcMs(day));
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`;
 }
 
 /** "1:05.3" style stopwatch text from seconds. */

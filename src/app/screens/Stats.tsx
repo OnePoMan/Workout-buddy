@@ -1,24 +1,24 @@
-import { LOCKABLE, metricLabel } from '../../domain/achievements';
-import { dayLabel, formatDuration } from '../../domain/dates';
-import type { PbEvent } from '../../domain/progress';
+import { LOCKABLE, formatPbValue, metricLabel } from '../../domain/achievements';
+import { dayLabel } from '../../domain/dates';
 import { RANK_THRESHOLDS, STATS, STAT_LABEL } from '../../domain/rules';
 import { EXERCISE_LABEL } from '../../domain/schedule';
 import { isComplete } from '../../domain/sessions';
-import type { LogicalDay } from '../../domain/types';
+import { UNLOCKS } from '../../domain/unlocks';
+import { seasonRecap } from '../../domain/rewards';
+import { Heatmap } from '../components/Heatmap';
+import { SeasonSummary } from '../components/SeasonSummary';
+import { useUnlocks } from '../hooks/useUnlocks';
 import { ProgressBar } from '../components/ProgressBar';
 import { sessionDetail } from '../format';
 import { useProgress } from '../hooks/useProgress';
 import { useSave } from '../hooks/useStore';
 
-function pbValue(ev: Pick<PbEvent, 'kind' | 'value'>): string {
-  if (ev.kind === 'set') return `${ev.value} REPS`;
-  if (ev.kind === 'time') return formatDuration(ev.value, true);
-  return `${formatDuration(ev.value)}/MI`;
-}
-
-export function Stats({ today }: { today: LogicalDay }) {
-  const { sessions } = useSave();
-  const { today: snap, earned } = useProgress(today);
+export function Stats() {
+  const save = useSave();
+  const { sessions } = save;
+  const progress = useProgress();
+  const { today: snap, earned } = progress;
+  const unlocks = useUnlocks();
   const history = [...sessions].sort((a, b) => (a.slot < b.slot ? 1 : -1));
   const bests = Object.values(snap.bests).sort((a, b) => (a.metric < b.metric ? -1 : 1));
   const earnedSorted = [...earned].sort((a, b) => (a.lastOn < b.lastOn ? 1 : a.lastOn > b.lastOn ? -1 : 0));
@@ -30,6 +30,15 @@ export function Stats({ today }: { today: LogicalDay }) {
       <header className="slab slab-title">
         <h1>STATS</h1>
       </header>
+
+      {snap.asOf > save.settings.seasonEnd && (
+        <section className="card is-done" aria-label="Season summary">
+          <h2 className="card-kicker">FALL 2026 • SEASON SUMMARY</h2>
+          <SeasonSummary recap={seasonRecap(progress)} />
+        </section>
+      )}
+
+      <Heatmap />
 
       <section className="card" aria-label="Stat ranks">
         <h2 className="card-kicker">RANKS</h2>
@@ -67,15 +76,15 @@ export function Stats({ today }: { today: LogicalDay }) {
             <li key={ev.metric}>
               <span>{metricLabel(ev)}</span>
               <span className="mono">
-                {pbValue(ev)} • {dayLabel(ev.day)}
-                {ev.previous !== null && <span className="pb-prev"> (was {pbValue({ kind: ev.kind, value: ev.previous })})</span>}
+                {formatPbValue(ev)} • {dayLabel(ev.day)}
+                {ev.previous !== null && <span className="pb-prev"> (was {formatPbValue({ kind: ev.kind, value: ev.previous })})</span>}
               </span>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="card" aria-label="Achievements">
+      <section className="card" aria-label="Achievements" id="achievements">
         <h2 className="card-kicker">ACHIEVEMENTS</h2>
         {earnedSorted.length === 0 && <p className="hint">None yet.</p>}
         <ul className="history">
@@ -107,8 +116,27 @@ export function Stats({ today }: { today: LogicalDay }) {
         )}
       </section>
 
-      <section className="card" aria-label="History">
-        <h2 className="card-kicker">HISTORY</h2>
+      <section className="card" aria-label="Unlocks">
+        <h2 className="card-kicker">
+          UNLOCKS ({unlocks.has.size}/{UNLOCKS.length})
+        </h2>
+        <ul className="history">
+          {UNLOCKS.map((u) => (
+            <li key={u.id} className={unlocks.has.has(u.id) ? 'is-done' : 'is-locked'}>
+              <span>
+                {u.name}
+                <small className="ach-desc">
+                  {u.kind === 'room' ? 'Room' : u.kind === 'hair' ? 'Hairstyle' : 'Outfit'} • {u.condition}
+                </small>
+              </span>
+              <span className="mono">{unlocks.has.has(u.id) ? 'UNLOCKED' : 'LOCKED'}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <details className="card" aria-label="All sessions">
+        <summary className="card-kicker">ALL SESSIONS ({history.length})</summary>
         {history.length === 0 ? (
           <p className="hint">No sessions logged yet.</p>
         ) : (
@@ -124,7 +152,7 @@ export function Stats({ today }: { today: LogicalDay }) {
             ))}
           </ul>
         )}
-      </section>
+      </details>
     </div>
   );
 }

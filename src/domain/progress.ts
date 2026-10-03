@@ -192,7 +192,7 @@ function personalBests(sessions: readonly SessionLog[]): { events: PbEvent[]; be
       }
     } else {
       const sets = s.sets ?? [];
-      if (sets.length > 0) consider(s, 'set', Math.max(...sets), false);
+      if (sets.length > 0) consider(s, 'set', sets.reduce((a, b) => Math.max(a, b)), false);
       if (s.durationSec && s.durationSec > 0 && totalReps(sets) >= s.target) {
         consider(s, 'time', s.durationSec, true);
       }

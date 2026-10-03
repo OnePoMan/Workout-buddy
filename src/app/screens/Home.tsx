@@ -13,6 +13,7 @@ import { CounterHistory } from '../components/CounterHistory';
 import { RoomView } from '../components/RoomView';
 import { useProgress } from '../hooks/useProgress';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { outfitFor, roomExtras, useUnlocks } from '../hooks/useUnlocks';
 import { useSave, useStoreApi } from '../hooks/useStore';
 
 interface Props {
@@ -25,6 +26,7 @@ export function Home({ today, onLog }: Props) {
   const { settings } = save;
   const mood = useMemo(() => characterMood(save, today), [save, today]);
   const reduceMotion = useReducedMotion(settings.reduceMotion);
+  const unlocks = useUnlocks();
 
   return (
     <div className="screen">
@@ -33,7 +35,12 @@ export function Home({ today, onLog }: Props) {
         <p className="slab-sub">{dayLabel(today)}</p>
       </header>
 
-      <RoomView mood={mood} reduceMotion={reduceMotion} />
+      <RoomView
+        mood={mood}
+        extras={roomExtras(unlocks)}
+        outfit={outfitFor(unlocks, settings.hair)}
+        reduceMotion={reduceMotion}
+      />
 
       <TodayCard today={today} onLog={onLog} />
 

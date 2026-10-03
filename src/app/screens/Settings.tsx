@@ -4,7 +4,9 @@ import { CAP_MAX, CAP_MIN, COUNTERS } from '../../domain/counters';
 import { fullDate, isValidDay, weekdayLabel } from '../../domain/dates';
 import { EXERCISE_LABEL } from '../../domain/schedule';
 import { TARGET_LIMITS, isValidCap, isValidTarget } from '../../domain/settings';
-import { EXERCISES, type LogicalDay, type ReduceMotion } from '../../domain/types';
+import { EXERCISES, type HairSetting, type LogicalDay, type ReduceMotion } from '../../domain/types';
+import { resolveHair } from '../../domain/unlocks';
+import { useUnlocks } from '../hooks/useUnlocks';
 import { exportFileName, parseImport, serialize } from '../../storage/exportImport';
 import { useSave, useStoreApi } from '../hooks/useStore';
 
@@ -58,6 +60,7 @@ export function Settings({ today }: { today: LogicalDay }) {
   const store = useStoreApi();
   const save = useSave();
   const { settings } = save;
+  const unlocks = useUnlocks();
   const fileInput = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<{ kind: 'ok' | 'error'; text: string } | null>(null);
 
@@ -186,7 +189,19 @@ export function Settings({ today }: { today: LogicalDay }) {
             <option value="off">OFF</option>
           </select>
         </label>
-        <p className="hint">Sound and animations arrive in later milestones.</p>
+        <p className="hint">Sound plays with reward animations. It starts after your first tap.</p>
+        {unlocks.has.has('ponytail') && (
+          <label className="field">
+            <span>HAIR</span>
+            <select
+              value={resolveHair(settings.hair, unlocks)}
+              onChange={(e) => updateSettings(store, { hair: e.target.value as HairSetting })}
+            >
+              <option value="ponytail">PONYTAIL</option>
+              <option value="down">DOWN</option>
+            </select>
+          </label>
+        )}
       </section>
 
       <section className="card">

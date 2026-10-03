@@ -36,6 +36,8 @@ export interface WeekStatus {
   /** Day the last session needed for PERFECT WEEK was logged. */
   perfectOn?: LogicalDay;
   freezesUsed: number;
+  /** The perfect week banked a freeze (false when already at the cap). */
+  freezeEarned: boolean;
 }
 
 export type PbKind = 'set' | 'time' | 'pace';
@@ -144,7 +146,15 @@ function walkWeeks(save: SaveFile, asOf: LogicalDay, byslot: Map<LogicalDay, Ses
 
     const eligible = slots.length === FULL_WEEK_SLOTS;
     const perfect = eligible && fractions.every((f) => f >= 1);
-    const week: WeekStatus = { start: w, slots: statuses, ended, eligible, perfect, freezesUsed: frozen.size };
+    const week: WeekStatus = {
+      start: w,
+      slots: statuses,
+      ended,
+      eligible,
+      perfect,
+      freezesUsed: frozen.size,
+      freezeEarned: perfect && banked < FREEZE_CAP,
+    };
     if (perfect) {
       week.perfectOn = slots.map((s) => byslot.get(s.day)!.loggedOn).sort().at(-1);
       banked = Math.min(FREEZE_CAP, banked + 1);

@@ -1,7 +1,30 @@
 import { PixelBuffer } from './buffer';
 import { hex } from './color';
-import { CH, CW, characterOrigin, renderCharacter, sit, stand, type Expression, type Pose } from './sprites/character';
-import { FLOOR_Y, NEON, ROOM_H, ROOM_W, SIT_X, STAND_X, TABLE_LAYER_Y, TABLE_X, roomLayers, type RoomProps } from './sprites/room';
+import {
+  CH,
+  CW,
+  DEFAULT_OUTFIT,
+  characterOrigin,
+  renderCharacter,
+  sit,
+  stand,
+  type Expression,
+  type Outfit,
+  type Pose,
+} from './sprites/character';
+import {
+  FLOOR_Y,
+  NEON,
+  ROOM_H,
+  ROOM_W,
+  SIT_X,
+  STAND_X,
+  TABLE_LAYER_Y,
+  TABLE_X,
+  roomLayers,
+  type RoomExtras,
+  type RoomProps,
+} from './sprites/room';
 
 export type ScenePose = 'stand' | 'sit';
 export type SceneFace = 'normal' | 'happy' | 'sideeye' | 'look' | 'smile';
@@ -11,6 +34,17 @@ export interface SceneState {
   face: SceneFace;
   /** Today's Diet Dr Pepper cans and snack wrappers. */
   props?: RoomProps;
+  /** Unlocked room items. */
+  extras?: RoomExtras;
+  /** Unlocked outfit and hair (sway is animated here). */
+  outfit?: Omit<Outfit, 'sway'>;
+}
+
+const SWAY_PERIOD = 1.8;
+
+/** Ponytail swing: -1, 0, 1. */
+export function swayAt(t: number): number {
+  return Math.round(Math.sin((t / SWAY_PERIOD) * 2 * Math.PI));
 }
 
 /** Animation clock constants (seconds). */
@@ -46,8 +80,9 @@ function expressionAt(face: SceneFace, t: number): Expression {
 
 export function poseAt(state: SceneState, t: number): Pose {
   const expr = expressionAt(state.face, t);
-  if (state.pose === 'sit') return sit(expr, { facing: -1 });
-  return stand((t % BREATH_PERIOD) / BREATH_PERIOD, expr);
+  const outfit: Outfit = { ...DEFAULT_OUTFIT, ...state.outfit, sway: swayAt(t) };
+  if (state.pose === 'sit') return sit(expr, { facing: -1, outfit });
+  return stand((t % BREATH_PERIOD) / BREATH_PERIOD, expr, { outfit });
 }
 
 const scratchCache = new Map<string, PixelBuffer>();
@@ -65,7 +100,7 @@ function scratch(w: number, h: number): PixelBuffer {
  * rebuilt from the unlit layers and re-lit.
  */
 export function renderScene(state: SceneState, t: number, out = new PixelBuffer(ROOM_W, ROOM_H)): PixelBuffer {
-  const layers = roomLayers(state.props);
+  const layers = roomLayers(state.props, state.extras);
   out.data.set(layers.lit.data);
   if (Math.floor(t * 7) % 9 === 0) {
     // Neon flicker: dim the sign, then re-apply the light over those pixels.

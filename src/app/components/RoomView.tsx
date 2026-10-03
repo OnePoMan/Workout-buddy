@@ -4,7 +4,8 @@ import { PixelBuffer } from '../../pixel/buffer';
 import { present } from '../../pixel/present';
 import { computeScale, cropX, type PixelScale } from '../../pixel/scale';
 import { characterX, renderScene } from '../../pixel/scene';
-import { ROOM_H, ROOM_W } from '../../pixel/sprites/room';
+import type { Outfit } from '../../pixel/sprites/character';
+import { ROOM_H, ROOM_W, type RoomExtras } from '../../pixel/sprites/room';
 
 const FPS = 12;
 /** Frame used when motion is reduced: eyes open, no hop. */
@@ -12,14 +13,19 @@ const STILL_T = 1;
 
 interface Props {
   mood: Mood;
+  extras: RoomExtras;
+  outfit: Omit<Outfit, 'sway'>;
   reduceMotion: boolean;
 }
 
-export function RoomView({ mood, reduceMotion }: Props) {
+export function RoomView({ mood, extras, outfit, reduceMotion }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scale, setScale] = useState<PixelScale | null>(null);
   const { pose, face, cans, wrappers } = mood;
+  // Stable keys so the render loop restarts only when what is drawn changes.
+  const extrasKey = JSON.stringify(extras);
+  const outfitKey = JSON.stringify(outfit);
 
   // Track container width and DPR.
   useEffect(() => {
@@ -47,7 +53,13 @@ export function RoomView({ mood, reduceMotion }: Props) {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || !scale) return;
-    const state = { pose, face, props: { cans, wrappers } };
+    const state = {
+      pose,
+      face,
+      props: { cans, wrappers },
+      extras: JSON.parse(extrasKey) as RoomExtras,
+      outfit: JSON.parse(outfitKey) as Omit<Outfit, 'sway'>,
+    };
     const frame = new PixelBuffer(ROOM_W, ROOM_H);
     const view = new PixelBuffer(scale.nativeW, ROOM_H);
     const x0 = cropX(ROOM_W, scale.nativeW, characterX(state));
@@ -82,7 +94,7 @@ export function RoomView({ mood, reduceMotion }: Props) {
       cancelAnimationFrame(raf);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [scale, pose, face, cans, wrappers, reduceMotion]);
+  }, [scale, pose, face, cans, wrappers, extrasKey, outfitKey, reduceMotion]);
 
   return (
     <div ref={wrapRef} className="room">

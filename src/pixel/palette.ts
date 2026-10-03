@@ -36,6 +36,8 @@ export const C = {
   sock_d: hex('c4307a'),
   shoe: hex('f8f4f0'),
   sole: hex('cfc8de'),
+  neon: hex('c6ff3a'),
+  neon_sole: hex('3d3756'),
   mouth: hex('a8344a'),
 } as const;
 

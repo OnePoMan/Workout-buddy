@@ -9,6 +9,9 @@ export type CounterId = 'dr_pepper' | 'snacks';
 
 export type ReduceMotion = 'system' | 'on' | 'off';
 
+/** 'auto' switches to the ponytail as soon as it unlocks. */
+export type HairSetting = 'auto' | 'down' | 'ponytail';
+
 export interface Settings {
   seasonStart: LogicalDay;
   seasonEnd: LogicalDay;
@@ -19,6 +22,7 @@ export interface Settings {
   caps: Record<string, number>;
   sound: boolean;
   reduceMotion: ReduceMotion;
+  hair: HairSetting;
 }
 
 export interface SessionLog {
@@ -47,7 +51,7 @@ export interface CounterEntry {
   delta: 1 | -1;
 }
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export interface SaveFile {
   schemaVersion: typeof SCHEMA_VERSION;

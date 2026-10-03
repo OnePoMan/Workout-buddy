@@ -921,3 +921,7 @@ details.card[open] > summary::before {
 .counter-open .counter-value {
   flex: none;
 }
+
+.history li.is-locked {
+  opacity: 0.55;
+}

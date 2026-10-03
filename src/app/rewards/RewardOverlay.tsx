@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { announce, type RewardItem } from '../../domain/rewards';
-import { isBlocking, renderReward, rewardDuration } from '../../fx/render';
+import { announce, unlockNote, type RewardItem } from '../../domain/rewards';
+import { isBlocking, isCard, renderReward, rewardDuration } from '../../fx/render';
+import type { Outfit } from '../../pixel/sprites/character';
+import { SeasonSummary } from '../components/SeasonSummary';
+import { cuesFor } from '../../audio/cues';
+import { playCues } from '../../audio/sfx';
 import { PixelBuffer } from '../../pixel/buffer';
 import { present } from '../../pixel/present';
 import { MIN_NATIVE_W } from '../../pixel/scale';
@@ -28,12 +32,14 @@ function measure(): OverlaySize {
 
 interface Props {
   current: RewardItem | null;
+  outfit: Omit<Outfit, 'sway'>;
   reduceMotion: boolean;
+  sound: boolean;
   onFinish(key: string): void;
   onOpenAchievements(): void;
 }
 
-export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchievements }: Props) {
+export function RewardOverlay({ current, outfit, reduceMotion, sound, onFinish, onOpenAchievements }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<OverlaySize>(() => measure());
 
@@ -45,7 +51,7 @@ export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchieveme
 
   // Play the current item; finish when its time is up.
   useEffect(() => {
-    if (!current || current.kind === 'more') return;
+    if (!current || isCard(current)) return;
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx) return;
     const buf = new PixelBuffer(size.w, size.h);
@@ -53,7 +59,7 @@ export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchieveme
     const key = current.key;
 
     if (reduceMotion) {
-      renderReward(buf, current, 0, true);
+      renderReward(buf, current, 0, true, { outfit });
       present(buf, ctx);
       const id = window.setTimeout(() => onFinish(key), dur * 1000);
       return () => window.clearTimeout(id);
@@ -71,16 +77,22 @@ export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchieveme
       raf = requestAnimationFrame(tick);
       if (now - last < 1000 / FPS - 4) return;
       last = now;
-      renderReward(buf, current, t, false);
+      renderReward(buf, current, t, false, { outfit });
       present(buf, ctx);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [current, reduceMotion, size, onFinish]);
+  }, [current, reduceMotion, size, onFinish, outfit]);
+
+  // Sound: schedule the item's cues when it starts; fade them out if it ends early.
+  useEffect(() => {
+    if (!current || !sound) return;
+    return playCues(cuesFor(current, reduceMotion));
+  }, [current, sound, reduceMotion]);
 
   // Keyboard skip for blocking items.
   useEffect(() => {
-    if (!current || !isBlocking(current) || current.kind === 'more') return;
+    if (!current || !isBlocking(current) || isCard(current)) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -96,9 +108,9 @@ export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchieveme
   return (
     <>
       <div className="sr-only" aria-live="polite" role="status">
-        {current ? announce(current) : ''}
+        {current ? [announce(current), unlockNote(current)].filter(Boolean).join(' ') : ''}
       </div>
-      {current && current.kind !== 'more' && (
+      {current && !isCard(current) && (
         <div
           className={`reward-layer${blocking ? ' is-blocking reward-dim' : ''}${reduceMotion ? ' is-still' : ''}`}
           onPointerDown={blocking ? () => onFinish(current.key) : undefined}
@@ -116,6 +128,42 @@ export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchieveme
               Continue
             </button>
           )}
+        </div>
+      )}
+      {current?.kind === 'summary' && (
+        <div
+          className={`reward-layer is-blocking reward-dim reward-more-scrim${reduceMotion ? ' is-still' : ''}`}
+          onPointerDown={() => onFinish(current.key)}
+        >
+          <div
+            className="card reward-more"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="reward-summary-title"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            <p className="card-kicker">FALL 2026</p>
+            <h2 id="reward-summary-title" className="card-title">
+              SEASON SUMMARY
+            </h2>
+            <SeasonSummary recap={current.recap} />
+            <div className="card-row">
+              <button type="button" className="btn" onClick={() => onFinish(current.key)}>
+                CLOSE
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary btn-grow"
+                autoFocus
+                onClick={() => {
+                  onFinish(current.key);
+                  onOpenAchievements();
+                }}
+              >
+                VIEW STATS
+              </button>
+            </div>
+          </div>
         </div>
       )}
       {current?.kind === 'more' && (

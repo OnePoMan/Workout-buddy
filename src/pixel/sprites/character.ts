@@ -62,24 +62,82 @@ const EYES: Record<Expression, [string, string, string]> = {
 
 const BLUSHING: ReadonlySet<Expression> = new Set(['happy', 'smile']);
 
-export function headRows(expr: Expression): string[] {
+export type Hair = 'down' | 'ponytail';
+
+/** Ponytail: the long hair below the chin is gathered back into the tail. */
+const PONYTAIL_BOTTOM: Record<number, string> = {
+  19: '.ooooooooooSSSSSo.oo.',
+  20: '............SSS......',
+  21: '',
+  22: '',
+  23: '',
+  24: '',
+  25: '',
+};
+
+export function headRows(expr: Expression, hair: Hair = 'down', headband = false): string[] {
   const [up, lo, mouth] = EYES[expr];
-  const rows = HEAD_BASE.map((r) => r.replaceAll('{}', up).replaceAll('[]', lo).replaceAll('<>', mouth));
+  let rows = HEAD_BASE.map((r) => r.replaceAll('{}', up).replaceAll('[]', lo).replaceAll('<>', mouth));
+  if (hair === 'ponytail') rows = rows.map((r, y) => PONYTAIL_BOTTOM[y] ?? r);
+  if (headband) {
+    // A two-row band across the crown: light pink over dark pink.
+    rows = rows.map((r, y) => (y === 7 || y === 8 ? r.replace(/[hHlL]/g, y === 7 ? 'k' : 'K') : r));
+  }
   const w = Math.max(...rows.map((r) => r.length));
   return rows.map((r) => r.padEnd(w, '.'));
 }
 
-const headCache = new Map<Expression, PixelBuffer>();
+const headCache = new Map<string, PixelBuffer>();
 
-export function head(expr: Expression = 'normal'): PixelBuffer {
-  let im = headCache.get(expr);
+export function head(expr: Expression = 'normal', hair: Hair = 'down', headband = false): PixelBuffer {
+  const key = `${expr}:${hair}:${headband}`;
+  let im = headCache.get(key);
   if (!im) {
-    im = sprite(headRows(expr), PAL);
+    im = sprite(headRows(expr, hair, headband), PAL);
     if (BLUSHING.has(expr)) for (const bx of [8, 9, 15, 16]) im.set(bx, 15, C.blush);
-    headCache.set(expr, im);
+    headCache.set(key, im);
   }
   return im;
 }
+
+// Ponytail behind the head: pink tie at the top right, tapering down and back.
+const TAIL = [
+  '.....oko',
+  '....okKo',
+  '...ohhho',
+  '..ohhHho',
+  '.ohhHhho',
+  '.ohHhho.',
+  'ohhHhho.',
+  'ohHhhho.',
+  'ohhHho..',
+  'ohHhho..',
+  'ohhHho..',
+  '.ohHho..',
+  '.ohhho..',
+  '..ohho..',
+  '..oho...',
+  '..oho...',
+  '...o....',
+];
+/** Rows from here down swing with `sway`. */
+const TAIL_SWING_FROM = 6;
+
+let tailCache: [PixelBuffer, PixelBuffer] | null = null;
+function tailParts(): [PixelBuffer, PixelBuffer] {
+  tailCache ??= [sprite(TAIL.slice(0, TAIL_SWING_FROM), PAL), sprite(TAIL.slice(TAIL_SWING_FROM), PAL)];
+  return tailCache;
+}
+
+export interface Outfit {
+  hair: Hair;
+  headband: boolean;
+  neonShoes: boolean;
+  /** -1, 0 or 1: ponytail swing. */
+  sway?: number;
+}
+
+export const DEFAULT_OUTFIT: Outfit = { hair: 'down', headband: false, neonShoes: false };
 
 // Track jacket open at the neck over a pink tank (k), centre zip (z) with a
 // gold pull (g), elastic hem, then jogger waistband with drawstrings (W).
@@ -167,12 +225,16 @@ const SNEAKER = [
   '.ooooooo.',
 ];
 
-let sneakerCache: PixelBuffer | null = null;
+const sneakerCache = new Map<boolean, PixelBuffer>();
 
-/** Sneaker with its sole on y and heel at x - 3. */
-function foot(b: PixelBuffer, x: number, y: number): void {
-  sneakerCache ??= sprite(SNEAKER, PAL);
-  b.blit(sneakerCache, Math.round(x) - 3, Math.round(y) - 5);
+/** Sneaker with its sole on y and heel at x - 3. Neon: lime upper, dark sole. */
+function foot(b: PixelBuffer, x: number, y: number, neon = false): void {
+  let s = sneakerCache.get(neon);
+  if (!s) {
+    s = sprite(SNEAKER, neon ? { ...PAL, n: C.neon, d: C.neon_sole } : PAL);
+    sneakerCache.set(neon, s);
+  }
+  b.blit(s, Math.round(x) - 3, Math.round(y) - 5);
 }
 
 // Local frame: 60x80 canvas, feet baseline at y=76, body centre x=28.
@@ -196,6 +258,7 @@ export interface Pose {
   legNear: Point[];
   legFar: Point[];
   facing?: 1 | -1;
+  outfit?: Outfit;
   itemsBack?: Item[];
   itemsMid?: Item[];
   itemsFront?: Item[];
@@ -212,14 +275,22 @@ export function renderCharacter(pose: Pose): PixelBuffer {
   for (const it of pose.itemsBack ?? []) it(b, ox, oy + bdy);
   limb(b, P(pose.legFar), C.pants_d, null, 5);
   joggerDetails(b, P(pose.legFar), false);
-  foot(b, ox + end(pose.legFar)[0], oy + end(pose.legFar)[1] + 2);
+  const outfit = pose.outfit ?? DEFAULT_OUTFIT;
+  foot(b, ox + end(pose.legFar)[0], oy + end(pose.legFar)[1] + 2, outfit.neonShoes);
   arm(b, P(pose.armFar, bdy), C.top_d, C.skin_d, null);
   hand(b, ox + end(pose.armFar)[0], oy + end(pose.armFar)[1] + bdy);
   limb(b, P(pose.legNear), C.pants, C.pants_d, 5);
   joggerDetails(b, P(pose.legNear), true);
-  foot(b, ox + end(pose.legNear)[0], oy + end(pose.legNear)[1] + 2);
+  foot(b, ox + end(pose.legNear)[0], oy + end(pose.legNear)[1] + 2, outfit.neonShoes);
   b.blit(torso(), ox - 8 + (pose.torsoDx ?? 0), oy - 39 + bdy);
-  b.blit(head(pose.head), ox - 11 + (pose.headDx ?? 0), oy - 58 + bdy + (pose.headDy ?? 0));
+  const hx = ox - 11 + (pose.headDx ?? 0);
+  const hy = oy - 58 + bdy + (pose.headDy ?? 0);
+  if (outfit.hair === 'ponytail') {
+    const [top, bottom] = tailParts();
+    b.blit(top, hx - 5, hy + 4);
+    b.blit(bottom, hx - 5 + (outfit.sway ?? 0), hy + 4 + TAIL_SWING_FROM);
+  }
+  b.blit(head(pose.head, outfit.hair, outfit.headband), hx, hy);
   for (const it of pose.itemsMid ?? []) it(b, ox, oy + bdy);
   arm(b, P(pose.armNear, bdy), C.top, C.skin, C.top_d);
   hand(b, ox + end(pose.armNear)[0], oy + end(pose.armNear)[1] + bdy);

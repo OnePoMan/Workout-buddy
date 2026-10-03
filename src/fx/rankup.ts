@@ -13,6 +13,8 @@ export interface RankUpSpec {
   from: number;
   to: number;
   maxRank: number;
+  /** Optional gold line under the bar, e.g. "NEW: PULL-UP BAR". */
+  footer?: string | null;
 }
 
 const PIP_DARK = hex('5a0a18');
@@ -89,6 +91,7 @@ export function drawRankUp(buf: PixelBuffer, tl: number, spec: RankUpSpec, dur: 
   const rankText = filled ? `RANK ${spec.from} > ${spec.to}` : `RANK ${spec.from}`;
   const pipsEnd = x + 8 + spec.maxRank * 8;
   outlinedText(buf, rankText, Math.min(pipsEnd + 2, x + sw - textWidth(rankText) - 6), y + 21 + 10, C.gold_l, C.black);
+  if (spec.footer && filled) outlinedText(buf, spec.footer, x + 4, y + 52, C.gold, C.black);
 
   if (filled && leave < 1) {
     const up = ransomTiles('UP!', {

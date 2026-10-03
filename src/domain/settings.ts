@@ -29,6 +29,7 @@ export function defaultSettings(today: LogicalDay): Settings {
     caps: Object.fromEntries(COUNTERS.map((c) => [c.id, c.defaultCap])),
     sound: false,
     reduceMotion: 'system',
+    hair: 'auto',
   };
 }
 

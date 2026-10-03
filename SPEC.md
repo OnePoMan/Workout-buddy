@@ -232,7 +232,12 @@ achievement stores the date it was earned and a `seen` flag.
     skips; toasts never block taps.
   - The overlay spans the app column (max 560 px) at the same integer pixel
     scale as the room, and announces each reward to screen readers.
-  - Until M6, T3 and T4 items play as a full T2 banner.
+  - *(M6)* T3 is 10 s: shard wipe, character cut-in (current outfit), ray
+    burst, banner, the week's points per stat, freeze callout. T4 is 22 s:
+    title card, shards, the character over rays with the banner, final
+    ranks, season numbers, star iris, then a SEASON SUMMARY card (also shown
+    on Stats once the season is over). The summary card does not count
+    toward the three-in-a-row cap.
 
 ---
 
@@ -265,18 +270,22 @@ achievement stores the date it was earned and a `seen` flag.
 
 | Unlock | Condition | Type |
 |---|---|---|
-| Pull-up bar in the doorway | BACK rank 2 | Room |
+| Pull-up bar in the hall doorway (a doorway was added behind the character) | BACK rank 2 | Room |
 | Yoga mat | LEGS rank 2 | Room |
 | Dumbbells on the floor | STRENGTH rank 3 | Room |
 | Neon running shoes (replace the white sneakers) | STAMINA rank 2 | Outfit |
 | Headband | First perfect week | Outfit |
 | Ponytail hairstyle | Streak 12 (HOT STREAK) | Hair (toggle) |
 | Trophy shelf (shows top personal bests) | First personal best | Room |
-| Wall calendar (shows the streak number) | Streak 6 | Room |
+| Calendar on the fridge (shows the streak number) | Streak 6 | Room |
 | Window plant grows (3 stages) | DISCIPLINE ranks 3 / 6 / 9 | Room |
 | Poster swaps to a medal | Season complete | Room |
 
 - Unlocks appear automatically and cannot be removed or rearranged in v1.
+- *(As built in M6)* Each reward that grants an unlock says so ("NEW:
+  HEADBAND") on its banner or rank-up bar and in its announcement. Stats lists
+  every unlock with its condition. The trophy shelf holds one trophy per
+  record metric (up to 4).
 - Exception: the ponytail is a hairstyle option. When it unlocks the
   character switches to it, and Settings gains a HAIR: DOWN / PONYTAIL toggle.
   It needs a redrawn head sprite (back hair gathered, a tie, the tail
@@ -419,10 +428,18 @@ DOM panels use P5-style tilted black and red slabs, built with CSS
 - Their character follows `audio.py`.
 - Off by default. Audio starts only after a user gesture.
 - No background music in v1.
+- *(As built in M6)* Cues are pure data per reward (`src/audio/cues.ts`),
+  timed against the fx timelines, and played by a small Web Audio synth:
+  square ticks (one per banner letter, on the video's Gmaj9 arpeggio), blips,
+  bells, detuned-saw brass stabs, noise whooshes, a sub "slam", and a glint.
+  Skipping fades the item's sound out. Reduce motion plays one soft chime.
 
 ---
 
 ## 10. Data model
+
+*(As built in M6)* `schemaVersion` is 2: `settings.hair` (`auto` | `down` |
+`ponytail`) was added, and v1 saves and exports migrate automatically.
 
 Stored in `localStorage` under the single key `workout-buddy`, as versioned
 JSON. Every read and write is wrapped in try/catch. If storage is unavailable,
@@ -537,7 +554,7 @@ tests/            Vitest specs for domain/ and storage/
 5. **Counters and stats:** *(done)*
    - Counters with cans and wrappers in the room.
    - The heatmap, personal-best board and achievements list.
-6. **Polish:**
+6. **Polish:** *(done)*
    - T3 perfect-week sequence.
    - Room and outfit unlocks.
    - Sound effects.

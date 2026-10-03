@@ -6,6 +6,7 @@
 import { PixelBuffer, sprite, type Point } from '../buffer';
 import { hex } from '../color';
 import { ditherVGrad, glowLayer } from '../dither';
+import { drawText, textWidth } from '../font';
 import { C, P } from '../palette';
 import { mulberry32 } from '../rng';
 
@@ -142,9 +143,11 @@ function windowView(d: PixelBuffer, rnd: () => number): void {
   d.ellipse(x1 + 11, y0 - 9, x1 + 14, y0 - 6, C.gold);
 }
 
+export const POSTER = { x: 95, y: 28 } as const;
+
 function poster(d: PixelBuffer): void {
-  const px = 110;
-  const py = 28;
+  const px = POSTER.x;
+  const py = POSTER.y;
   d.rect(px, py, px + 20, py + 28, C.black);
   d.rect(px + 1, py + 1, px + 19, py + 27, C.red);
   d.polygon(
@@ -315,6 +318,146 @@ export function lamp(): PixelBuffer {
 export const LAMP_X = 69;
 export const LAMP_Y = -26;
 
+/** Hall doorway behind the character; the pull-up bar unlock hangs in it. */
+export const DOOR = { x0: 118, x1: 142, y0: 36 } as const;
+
+function doorway(d: PixelBuffer): void {
+  const { x0, x1, y0 } = DOOR;
+  const y1 = FLOOR_TOP - 1;
+  d.rect(x0, y0, x1, y1, P.wood_dd);
+  d.rect(x0 + 1, y0 + 1, x1 - 1, y1, P.wood_d);
+  d.line(x0 + 1, y0 + 1, x1 - 1, y0 + 1, P.wood_l);
+  d.rect(x0 + 3, y0 + 3, x1 - 3, y1, hex('1d0e33'));
+  d.rect(x0 + 3, y1 - 6, x1 - 3, y1, hex('2a1646'));
+  d.line(x0 + 3, y0 + 3, x0 + 3, y1, hex('120822'));
+  d.ellipse(x1 - 6, 78, x1 - 5, 79, C.gold); // handle on the open door edge
+}
+
+/** Visible extras unlocked by progress (SPEC §6.2). */
+export interface RoomExtras {
+  pullupBar: boolean;
+  yogaMat: boolean;
+  dumbbells: boolean;
+  /** Trophies on the shelf above the door; 0 hides the shelf. */
+  trophies: number;
+  /** Streak shown on the fridge calendar, or null when not unlocked. */
+  calendar: number | null;
+  /** 0–3. */
+  plantStage: number;
+  medal: boolean;
+}
+
+export const NO_EXTRAS: RoomExtras = {
+  pullupBar: false,
+  yogaMat: false,
+  dumbbells: false,
+  trophies: 0,
+  calendar: null,
+  plantStage: 0,
+  medal: false,
+};
+
+const TROPHY = ['oGGGo', 'oGgGo', '.oGo.', '..G..', '.oGo.', 'oGGGo'];
+
+function drawExtras(d: PixelBuffer, x: RoomExtras): void {
+  if (x.pullupBar) {
+    d.rect(DOOR.x0 - 3, 44, DOOR.x0 - 1, 49, P.steel_dd);
+    d.rect(DOOR.x1 + 1, 44, DOOR.x1 + 3, 49, P.steel_dd);
+    d.rect(DOOR.x0 - 2, 46, DOOR.x1 + 2, 47, P.steel);
+    d.line(DOOR.x0 - 2, 46, DOOR.x1 + 2, 46, P.steel_l);
+    d.rect(DOOR.x0 + 2, 46, DOOR.x0 + 5, 47, C.sock);
+    d.rect(DOOR.x1 - 5, 46, DOOR.x1 - 2, 47, C.sock);
+  }
+  if (x.trophies > 0) {
+    d.rect(DOOR.x0 - 2, 30, DOOR.x1 + 2, 32, P.wood);
+    d.line(DOOR.x0 - 2, 32, DOOR.x1 + 2, 32, P.wood_dd);
+    d.rect(DOOR.x0, 33, DOOR.x0 + 1, 34, P.wood_dd);
+    d.rect(DOOR.x1 - 1, 33, DOOR.x1, 34, P.wood_dd);
+    const t = sprite(TROPHY, { o: C.ink, G: C.gold, g: C.gold_l });
+    for (let i = 0; i < Math.min(x.trophies, 4); i++) d.blit(t, DOOR.x0 + i * 7, 30 - t.height);
+  }
+  if (x.yogaMat) {
+    const mat = hex('9a4cff');
+    d.polygon(
+      [
+        [154, 145],
+        [203, 145],
+        [200, 151],
+        [151, 151],
+      ],
+      mat,
+    );
+    d.line(154, 145, 203, 145, hex('c79bff'));
+    d.ellipse(199, 142, 207, 151, hex('6a2fc0'));
+    d.ellipse(201, 144, 205, 149, mat);
+  }
+  if (x.dumbbells) {
+    for (const [bx, by] of [
+      [212, 139],
+      [224, 142],
+    ] as const) {
+      d.rect(bx, by - 1, bx + 8, by, P.steel_d);
+      d.rect(bx - 2, by - 4, bx + 1, by + 3, C.ink);
+      d.rect(bx + 7, by - 4, bx + 10, by + 3, C.ink);
+      d.line(bx - 1, by - 3, bx - 1, by + 2, P.steel_dd);
+      d.line(bx + 8, by - 3, bx + 8, by + 2, P.steel_dd);
+    }
+  }
+  if (x.calendar !== null) {
+    d.rect(210, 50, 230, 72, C.white);
+    d.rect(210, 50, 230, 54, C.red);
+    d.rect(213, 48, 214, 51, C.ink);
+    d.rect(226, 48, 227, 51, C.ink);
+    const label = String(Math.min(x.calendar, 999));
+    drawText(d, label, Math.round(220 - textWidth(label) / 2) + 1, 58, C.ink);
+    for (const yy of [68, 70]) d.line(213, yy, 227, yy, P.note_line);
+  }
+  if (x.plantStage >= 1) {
+    const { y1 } = WINDOW;
+    d.rect(19, y1 - 15, 23, y1 - 2, P.plant);
+    d.line(19, y1 - 15, 19, y1 - 2, P.plant_d);
+    d.line(19, y1 - 16, 23, y1 - 16, C.ink);
+    if (x.plantStage >= 2) {
+      d.rect(15, y1 - 13, 16, y1 - 9, P.plant);
+      d.rect(17, y1 - 10, 18, y1 - 9, P.plant);
+      d.rect(25, y1 - 15, 26, y1 - 11, P.plant);
+      d.rect(24, y1 - 12, 24, y1 - 11, P.plant);
+    }
+    if (x.plantStage >= 3) {
+      d.rect(20, y1 - 19, 22, y1 - 17, C.sock);
+      d.set(21, y1 - 18, C.gold);
+      d.set(19, y1 - 18, C.sock_d);
+      d.set(23, y1 - 18, C.sock_d);
+    }
+  }
+  if (x.medal) {
+    const { x: px, y: py } = POSTER;
+    d.rect(px, py, px + 20, py + 28, C.black);
+    d.rect(px + 1, py + 1, px + 19, py + 27, hex('2a1344'));
+    d.polygon(
+      [
+        [px + 4, py + 1],
+        [px + 8, py + 1],
+        [px + 11, py + 12],
+        [px + 9, py + 13],
+      ],
+      C.red,
+    );
+    d.polygon(
+      [
+        [px + 12, py + 1],
+        [px + 16, py + 1],
+        [px + 11, py + 13],
+        [px + 9, py + 12],
+      ],
+      C.red_l,
+    );
+    d.ellipse(px + 4, py + 11, px + 16, py + 23, C.gold_d);
+    d.ellipse(px + 5, py + 12, px + 15, py + 22, C.gold);
+    d.polygon(star(px + 10, py + 17, 4, 1.8), C.white);
+  }
+}
+
 /** Today's counter props: Diet Dr Pepper cans on the counter, snack wrappers on the table. */
 export interface RoomProps {
   cans: number;
@@ -401,6 +544,7 @@ function staticParts(): StaticParts {
   rug(back);
   windowView(back, rnd);
   poster(back);
+  doorway(back);
   kitchen(back);
   fridge(back);
   back.blit(lamp(), LAMP_X, LAMP_Y);
@@ -418,16 +562,17 @@ function staticParts(): StaticParts {
 const layerCache = new Map<string, RoomLayers>();
 const LAYER_CACHE_SIZE = 4;
 
-/** Room layers for today's props; rebuilt only when the visible counts change. */
-export function roomLayers(props: RoomProps = NO_PROPS): RoomLayers {
+/** Room layers for today's props and unlocks; rebuilt only when what is visible changes. */
+export function roomLayers(props: RoomProps = NO_PROPS, extras: RoomExtras = NO_EXTRAS): RoomLayers {
   const cans = Math.max(0, Math.min(props.cans, MAX_VISIBLE_CANS));
   const wrappers = Math.max(0, Math.min(props.wrappers, MAX_VISIBLE_WRAPPERS));
-  const key = `${cans}:${wrappers}`;
+  const key = `${cans}:${wrappers}:${JSON.stringify(extras)}`;
   const hit = layerCache.get(key);
   if (hit) return hit;
 
   const sp = staticParts();
   const back = sp.back.clone();
+  drawExtras(back, extras);
   drawCans(back, cans);
   const tbl = new PixelBuffer(sp.table.width, sp.table.height + TABLE_PAD);
   tbl.blit(sp.table, 0, TABLE_PAD);

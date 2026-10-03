@@ -203,6 +203,25 @@ export class PixelBuffer {
     }
   }
 
+  /** Nearest-neighbour integer upscale. */
+  scaled(k: number): PixelBuffer {
+    const b = new PixelBuffer(this.width * k, this.height * k);
+    for (let y = 0; y < b.height; y++) {
+      const sy = Math.floor(y / k) * this.width;
+      for (let x = 0; x < b.width; x++) b.data[y * b.width + x] = this.data[sy + Math.floor(x / k)]!;
+    }
+    return b;
+  }
+
+  /** A copy of the inclusive-exclusive region [x, x+w) × [y, y+h). */
+  crop(x: number, y: number, w: number, h: number): PixelBuffer {
+    const b = new PixelBuffer(w, h);
+    for (let yy = 0; yy < h; yy++) {
+      for (let xx = 0; xx < w; xx++) b.data[yy * w + xx] = this.get(x + xx, y + yy);
+    }
+    return b;
+  }
+
   flipX(): PixelBuffer {
     const b = new PixelBuffer(this.width, this.height);
     for (let y = 0; y < this.height; y++) {

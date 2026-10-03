@@ -100,7 +100,7 @@ export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchieveme
       </div>
       {current && current.kind !== 'more' && (
         <div
-          className={`reward-layer${blocking ? ' is-blocking' : ''}`}
+          className={`reward-layer${blocking ? ' is-blocking reward-dim' : ''}${reduceMotion ? ' is-still' : ''}`}
           onPointerDown={blocking ? () => onFinish(current.key) : undefined}
         >
           <canvas
@@ -119,7 +119,10 @@ export function RewardOverlay({ current, reduceMotion, onFinish, onOpenAchieveme
         </div>
       )}
       {current?.kind === 'more' && (
-        <div className="reward-layer is-blocking reward-more-scrim" onPointerDown={() => onFinish(current.key)}>
+        <div
+          className={`reward-layer is-blocking reward-dim reward-more-scrim${reduceMotion ? ' is-still' : ''}`}
+          onPointerDown={() => onFinish(current.key)}
+        >
           <div
             className="card reward-more"
             role="dialog"

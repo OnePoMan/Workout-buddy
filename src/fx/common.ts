@@ -1,18 +1,8 @@
 import type { RewardIcon as BadgeIcon } from '../domain/rewards';
 import { PixelBuffer, sprite, type Point } from '../pixel/buffer';
 import { type Color } from '../pixel/color';
-import { bayer } from '../pixel/dither';
 import { drawText, textWidth } from '../pixel/font';
 import { C } from '../pixel/palette';
-
-/** Dithered black scrim; `p` 0..1 is coverage (0.6 max reads as ~60% dim). */
-export function scrim(buf: PixelBuffer, p: number): void {
-  const cover = Math.min(1, Math.max(0, p)) * 0.6;
-  if (cover <= 0) return;
-  for (let y = 0; y < buf.height; y++) {
-    for (let x = 0; x < buf.width; x++) if (bayer(x, y) < cover) buf.set(x, y, C.black);
-  }
-}
 
 /** Parallelogram with horizontal top/bottom, skewed right by `sk` at the top. */
 export function para(x0: number, y0: number, x1: number, y1: number, sk: number): Point[] {

@@ -224,8 +224,9 @@ achievement stores the date it was earned and a `seen` flag.
   - Several T1 firsts in one batch merge into a single toast ("4 FIRSTS!").
   - Several ranks of one stat merge into one bar (e.g. RANK 1 > 3).
   - Record banners show the metric and the new value on two lines.
-  - Blocking items dim the screen with a dithered scrim. Tap, Escape, Enter
-    or Space skips; toasts never block taps.
+  - Blocking items dim the screen with a smooth CSS dim (a dithered scrim
+    made the DOM text underneath look glitchy). Tap, Escape, Enter or Space
+    skips; toasts never block taps.
   - The overlay spans the app column (max 560 px) at the same integer pixel
     scale as the room, and announces each reward to screen readers.
   - Until M6, T3 and T4 items play as a full T2 banner.
@@ -283,6 +284,9 @@ achievement stores the date it was earned and a `seen` flag.
   counter.
 - Each snack shows as a wrapper.
 - Both reset at rollover.
+- *(As built in M5)* Cans stand in a 4-3-2-1 pyramid on the counter and
+  wrappers lie on the tablecloth (chips, candy and granola colours in turn).
+  Up to 10 of each are drawn; the counter shows the true total.
 
 ---
 
@@ -295,6 +299,9 @@ achievement stores the date it was earned and a `seen` flag.
 
 - Home has +/− buttons for each counter. A long press opens a small history of
   that day's entries. Each entry stores a timestamp, so undo works.
+  *(As built in M5)* Tapping the counter name or value also opens it, so it
+  works without a long press and from the keyboard. UNDO LAST removes the
+  latest entry.
 - Caps are editable in Settings, from 0 to 20.
 - **Going over the cap:**
   - The counter turns red and the character side-eyes.
@@ -330,6 +337,12 @@ The layout is phone-first and portrait. Navigation is a bottom tab bar:
 ### 8.3 Stats
 - **Heatmap:**
   - Weeks as columns and Mon–Sun as rows, for the whole season.
+  - *(As built in M5)* One-hue teal ramp (dark → bright on the dark card),
+    checked as an ordinal ramp: monotone lightness, visible steps, and the
+    lightest step clears the surface. Upcoming days are dashed outlines,
+    today has a gold outline, and every cell has a text label. The full
+    session list sits below in a collapsible ALL SESSIONS section as the
+    table view.
   - Shading is in 4 steps from 0 to 100% completion.
   - Sundays are greyed out. Frozen sessions show a freeze icon.
   - Tapping a cell shows that day's sessions and counters.
@@ -518,7 +531,7 @@ tests/            Vitest specs for domain/ and storage/
    - Idle animation and expressions.
 4. **Rewards:** *(done)* T1 toast, T2 banner and rank-up bar, the reward queue, reduce
    motion.
-5. **Counters and stats:**
+5. **Counters and stats:** *(done)*
    - Counters with cans and wrappers in the room.
    - The heatmap, personal-best board and achievements list.
 6. **Polish:**

@@ -315,12 +315,68 @@ export function lamp(): PixelBuffer {
 export const LAMP_X = 69;
 export const LAMP_Y = -26;
 
+/** Today's counter props: Diet Dr Pepper cans on the counter, snack wrappers on the table. */
+export interface RoomProps {
+  cans: number;
+  wrappers: number;
+}
+
+export const NO_PROPS: RoomProps = { cans: 0, wrappers: 0 };
+export const MAX_VISIBLE_CANS = 10;
+export const MAX_VISIBLE_WRAPPERS = 10;
+/** The table layer starts this far above the tabletop so wrappers can sit on it. */
+export const TABLE_PAD = 6;
+export const TABLE_LAYER_Y = TABLE_Y - TABLE_PAD;
+
+// Diet Dr Pepper: silver can with a maroon band.
+const CAN = ['.sss.', 'oWWWo', 'oMMMo', 'oMWMo', 'oMMMo', 'oWWWo', 'oSSSo', '.ooo.'];
+const CAN_PAL = { o: C.ink, s: P.steel, S: P.steel_d, W: P.steel_l, M: hex('8a1a3a') };
+
+const WRAPPER = ['.o.ooo.', 'oaabbao', 'oabaabo', '.ooooo.'];
+const WRAPPER_COLOURS: readonly [string, string][] = [
+  ['ff8a3d', 'ffd23f'], // chips
+  ['9a4cff', 'ff8aa6'], // candy
+  ['3ddc84', 'f8f4f0'], // granola
+];
+
+/** Can bottoms on the counter: a pyramid of 4-3-2-1, filled bottom row first. */
+export function canPositions(n: number): [number, number][] {
+  const out: [number, number][] = [];
+  const rows = [4, 3, 2, 1];
+  rows.forEach((count, r) => {
+    for (let i = 0; i < count; i++) out.push([COUNTER_SLOT.x0 + r * 3 + i * 6, COUNTER_SLOT.y - r * 8]);
+  });
+  return out.slice(0, Math.min(n, MAX_VISIBLE_CANS));
+}
+
+/** Wrapper bottoms in table-layer coordinates: a row on the cloth, then a second layer on top. */
+export function wrapperPositions(n: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < 5; i++) out.push([5 + i * 8, TABLE_PAD + 2 + (i % 2)]);
+  for (let i = 0; i < 5; i++) out.push([9 + i * 8, TABLE_PAD - 1 + (i % 2)]);
+  return out.slice(0, Math.min(n, MAX_VISIBLE_WRAPPERS));
+}
+
+function drawCans(d: PixelBuffer, n: number): void {
+  const can = sprite(CAN, CAN_PAL);
+  for (const [x, y] of canPositions(n)) d.blit(can, x, y - can.height + 1);
+}
+
+function drawWrappers(d: PixelBuffer, n: number): void {
+  wrapperPositions(n).forEach(([x, y], i) => {
+    const [a, b] = WRAPPER_COLOURS[i % WRAPPER_COLOURS.length]!;
+    const w = sprite(WRAPPER, { o: C.ink, a: hex(a), b: hex(b) });
+    d.blit(w, x, y - w.height + 1);
+  });
+}
+
 export interface RoomLayers {
-  /** Everything behind the character (includes the left chair). */
+  /** Everything behind the character (includes the left chair and the cans). */
   back: PixelBuffer;
   /** `back` plus the right-hand chair: what sits behind the character. */
   base: PixelBuffer;
   chairRight: PixelBuffer;
+  /** Table plus wrappers; drawn at (TABLE_X, TABLE_LAYER_Y). */
   table: PixelBuffer;
   /** Warm light, composited last. */
   glow: PixelBuffer;
@@ -328,10 +384,17 @@ export interface RoomLayers {
   lit: PixelBuffer;
 }
 
-let cached: RoomLayers | null = null;
+interface StaticParts {
+  back: PixelBuffer;
+  glow: PixelBuffer;
+  chairRight: PixelBuffer;
+  table: PixelBuffer;
+}
 
-export function roomLayers(): RoomLayers {
-  if (cached) return cached;
+let parts: StaticParts | null = null;
+
+function staticParts(): StaticParts {
+  if (parts) return parts;
   const rnd = mulberry32(7);
   const back = new PixelBuffer(ROOM_W, ROOM_H, P.wall);
   wallAndFloor(back);
@@ -348,13 +411,36 @@ export function roomLayers(): RoomLayers {
   glow.blit(glowLayer(ROOM_W, ROOM_H, 173, 58, 40, hex('fff0b0', 50)), 0, 0);
   glow.blit(glowLayer(ROOM_W, ROOM_H, 38, 50, 50, hex('ff7ad0', 40)), 0, 0);
 
-  const chairRight = chair().flipX();
-  const tbl = table();
+  parts = { back, glow, chairRight: chair().flipX(), table: table() };
+  return parts;
+}
+
+const layerCache = new Map<string, RoomLayers>();
+const LAYER_CACHE_SIZE = 4;
+
+/** Room layers for today's props; rebuilt only when the visible counts change. */
+export function roomLayers(props: RoomProps = NO_PROPS): RoomLayers {
+  const cans = Math.max(0, Math.min(props.cans, MAX_VISIBLE_CANS));
+  const wrappers = Math.max(0, Math.min(props.wrappers, MAX_VISIBLE_WRAPPERS));
+  const key = `${cans}:${wrappers}`;
+  const hit = layerCache.get(key);
+  if (hit) return hit;
+
+  const sp = staticParts();
+  const back = sp.back.clone();
+  drawCans(back, cans);
+  const tbl = new PixelBuffer(sp.table.width, sp.table.height + TABLE_PAD);
+  tbl.blit(sp.table, 0, TABLE_PAD);
+  drawWrappers(tbl, wrappers);
+
   const base = back.clone();
-  base.blit(chairRight, CHAIR_R_X, CHAIR_Y);
+  base.blit(sp.chairRight, CHAIR_R_X, CHAIR_Y);
   const lit = base.clone();
-  lit.blit(tbl, TABLE_X, TABLE_Y);
-  lit.blit(glow, 0, 0);
-  cached = { back, base, chairRight, table: tbl, glow, lit };
-  return cached;
+  lit.blit(tbl, TABLE_X, TABLE_LAYER_Y);
+  lit.blit(sp.glow, 0, 0);
+
+  const layers = { back, base, chairRight: sp.chairRight, table: tbl, glow: sp.glow, lit };
+  if (layerCache.size >= LAYER_CACHE_SIZE) layerCache.delete(layerCache.keys().next().value!);
+  layerCache.set(key, layers);
+  return layers;
 }

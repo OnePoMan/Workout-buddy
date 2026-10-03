@@ -4,7 +4,7 @@ import { MON, counter, log, save } from './helpers';
 
 describe('characterMood', () => {
   it('idles on a workout day with nothing done', () => {
-    expect(characterMood(save(MON), MON)).toEqual({ pose: 'stand', face: 'normal' });
+    expect(characterMood(save(MON), MON)).toEqual({ pose: 'stand', face: 'normal', cans: 0, wrappers: 0 });
   });
 
   it('is happy after completing a session today, including a make-up', () => {
@@ -26,11 +26,22 @@ describe('characterMood', () => {
 
   it('sits and smiles on Sunday and outside the season', () => {
     const all = [MON, '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10'].map((d) => log(d));
-    expect(characterMood(save(MON, all), '2026-10-11')).toEqual({ pose: 'sit', face: 'smile' });
-    expect(characterMood(save('2026-10-12'), MON)).toEqual({ pose: 'sit', face: 'smile' });
+    expect(characterMood(save(MON, all), '2026-10-11')).toMatchObject({ pose: 'sit', face: 'smile' });
+    expect(characterMood(save('2026-10-12'), MON)).toMatchObject({ pose: 'sit', face: 'smile' });
   });
 
   it('describes itself for screen readers', () => {
-    expect(describeMood({ pose: 'sit', face: 'smile' })).toMatch(/relaxing at the table, smiling/);
+    expect(describeMood({ pose: 'sit', face: 'smile', cans: 0, wrappers: 0 })).toBe(
+      'Your character is relaxing at the table, smiling.',
+    );
+    expect(describeMood({ pose: 'stand', face: 'sideeye', cans: 3, wrappers: 1 })).toBe(
+      'Your character is standing in the apartment, giving you a side-eye about the counters. ' +
+        'Today: 3 cans of Diet Dr Pepper on the counter and 1 snack wrapper on the table.',
+    );
+  });
+
+  it('counts today\'s cans and wrappers for the room', () => {
+    const sv = save(MON, [], [...counter(MON, 'dr_pepper', 2), ...counter(MON, 'snacks', 3), ...counter('2026-10-06')]);
+    expect(characterMood(sv, MON)).toMatchObject({ cans: 2, wrappers: 3 });
   });
 });

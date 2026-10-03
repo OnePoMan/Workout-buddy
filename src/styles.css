@@ -10,6 +10,7 @@
   --ink: #24122e;
   --teal: #20c9d0;
   --teal-d: #0f8d9e;
+  --teal-dd: #0b5f78;
   --pink: #ff5fa8;
 
   --bg: var(--black);
@@ -545,6 +546,7 @@ p {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+    animation: none !important;
   }
 }
 
@@ -666,10 +668,25 @@ p {
   image-rendering: crisp-edges;
 }
 
+/* Smooth dim behind blocking rewards (the pixel art stays crisp on its own canvas). */
+.reward-dim {
+  background: rgb(12 10 18 / 0.62);
+  animation: reward-dim-in 200ms ease-out;
+}
+
+.reward-dim.is-still {
+  animation: none;
+}
+
+@keyframes reward-dim-in {
+  from {
+    background: rgb(12 10 18 / 0);
+  }
+}
+
 .reward-more-scrim {
   align-items: center;
   padding: var(--gutter);
-  background: rgb(12 10 18 / 0.7);
 }
 
 .reward-more {
@@ -689,4 +706,218 @@ p {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+/* -------------------------------------------------------------- heatmap */
+.heat {
+  display: grid;
+  gap: 3px;
+  align-items: center;
+}
+
+.heat-month,
+.heat-row-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.heat-month {
+  min-height: 12px;
+}
+
+.heat-cell {
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border: 1px solid var(--panel-edge);
+  border-radius: 2px;
+  background: var(--black);
+  color: var(--white);
+  cursor: pointer;
+}
+
+/* One hue, dark to bright on the dark surface (validated as an ordinal ramp). */
+.heat-cell.lvl-1,
+.heat-swatch.lvl-1 {
+  background: var(--teal-dd);
+  border-color: var(--teal-dd);
+}
+
+.heat-cell.lvl-2,
+.heat-swatch.lvl-2 {
+  background: var(--teal-d);
+  border-color: var(--teal-d);
+}
+
+.heat-cell.lvl-3,
+.heat-swatch.lvl-3 {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.heat-cell.is-future {
+  border-style: dashed;
+  background: transparent;
+}
+
+.heat-cell.is-rest,
+.heat-swatch.is-rest {
+  background: repeating-linear-gradient(135deg, var(--panel-edge) 0 2px, transparent 2px 5px);
+  border-color: transparent;
+}
+
+.heat-cell.is-outside {
+  border: 0;
+  background: none;
+  pointer-events: none;
+}
+
+.heat-cell.is-frozen,
+.heat-swatch.is-frozen {
+  border-color: var(--white);
+  color: var(--white);
+}
+
+.heat-cell.is-today {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.heat-cell.is-selected {
+  box-shadow: 0 0 0 2px var(--white) inset;
+}
+
+.heat-cell:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.heat-icon {
+  position: absolute;
+  inset: 20%;
+  width: 60%;
+  height: 60%;
+}
+
+.heat-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.heat-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.heat-swatch {
+  position: relative;
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 2px;
+  background: var(--black);
+}
+
+.heat-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 2px solid var(--panel-edge);
+  padding-top: 10px;
+}
+
+.is-over-text {
+  color: var(--red-l);
+  font-weight: 900;
+}
+
+details.card > summary {
+  cursor: pointer;
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  list-style: none;
+}
+
+details.card > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.card > summary::before {
+  content: '▸';
+  margin-right: 8px;
+}
+
+details.card[open] > summary::before {
+  content: '▾';
+}
+
+/* --------------------------------------------------------- counter open */
+.counter {
+  grid-template-columns: 1fr var(--tap) var(--tap);
+}
+
+.counter-open {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--tap);
+  padding: 0 8px 0 0;
+  background: none;
+  border: 0;
+  text-align: left;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.counter-open:focus-visible {
+  outline: 3px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------- modal */
+.modal-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--gutter);
+  background: rgb(12 10 18 / 0.62);
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 80dvh;
+  overflow-y: auto;
+}
+
+.counter-open .counter-label {
+  min-width: 0;
+  font-size: 0.9rem;
+  line-height: 1.15;
+  letter-spacing: 0.03em;
+}
+
+.counter-open .counter-value {
+  flex: none;
 }

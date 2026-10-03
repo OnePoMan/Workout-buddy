@@ -9,6 +9,9 @@ export type Face = 'normal' | 'happy' | 'sideeye' | 'look' | 'smile';
 export interface Mood {
   pose: Pose;
   face: Face;
+  /** Today's counter totals, shown as props in the room. */
+  cans: number;
+  wrappers: number;
 }
 
 /**
@@ -28,10 +31,19 @@ export function characterMood(save: SaveFile, today: LogicalDay): Mood {
   else if (completedToday) face = 'happy';
   else if (pending) face = 'look';
   else if (rest) face = 'smile';
-  return { pose: rest ? 'sit' : 'stand', face };
+  return {
+    pose: rest ? 'sit' : 'stand',
+    face,
+    cans: counterTotal(counters, 'dr_pepper', today),
+    wrappers: counterTotal(counters, 'snacks', today),
+  };
 }
 
 export function describeMood(mood: Mood): string {
+  const props = [
+    mood.cans ? `${mood.cans} can${mood.cans === 1 ? '' : 's'} of Diet Dr Pepper on the counter` : '',
+    mood.wrappers ? `${mood.wrappers} snack wrapper${mood.wrappers === 1 ? '' : 's'} on the table` : '',
+  ].filter(Boolean);
   const where = mood.pose === 'sit' ? 'relaxing at the table' : 'standing in the apartment';
   const faces: Record<Face, string> = {
     normal: 'ready to go',
@@ -40,5 +52,6 @@ export function describeMood(mood: Mood): string {
     look: 'looking at you about a make-up session',
     smile: 'smiling',
   };
-  return `Your character is ${where}, ${faces[mood.face]}.`;
+  const scene = `Your character is ${where}, ${faces[mood.face]}.`;
+  return props.length ? `${scene} Today: ${props.join(' and ')}.` : scene;
 }

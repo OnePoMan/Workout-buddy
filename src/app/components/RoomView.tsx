@@ -19,7 +19,7 @@ export function RoomView({ mood, reduceMotion }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scale, setScale] = useState<PixelScale | null>(null);
-  const { pose, face } = mood;
+  const { pose, face, cans, wrappers } = mood;
 
   // Track container width and DPR.
   useEffect(() => {
@@ -47,7 +47,7 @@ export function RoomView({ mood, reduceMotion }: Props) {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx || !scale) return;
-    const state = { pose, face };
+    const state = { pose, face, props: { cans, wrappers } };
     const frame = new PixelBuffer(ROOM_W, ROOM_H);
     const view = new PixelBuffer(scale.nativeW, ROOM_H);
     const x0 = cropX(ROOM_W, scale.nativeW, characterX(state));
@@ -82,7 +82,7 @@ export function RoomView({ mood, reduceMotion }: Props) {
       cancelAnimationFrame(raf);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [scale, pose, face, reduceMotion]);
+  }, [scale, pose, face, cans, wrappers, reduceMotion]);
 
   return (
     <div ref={wrapRef} className="room">

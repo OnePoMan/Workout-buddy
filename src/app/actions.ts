@@ -1,5 +1,5 @@
 import { markSeen, type Earned } from '../domain/achievements';
-import { applyCounterDelta, counterTotal } from '../domain/counters';
+import { applyCounterDelta, counterTotal, removeCounterEntry } from '../domain/counters';
 import { newId } from '../domain/ids';
 import { removeSession, upsertSession } from '../domain/sessions';
 import type { LogicalDay, SaveFile, SessionLog, Settings } from '../domain/types';
@@ -45,4 +45,8 @@ export function resetAll(store: Store, today: LogicalDay): void {
 
 export function markEarnedSeen(store: Store, earned: Earned[]): void {
   store.update((s) => ({ ...s, seen: markSeen(s.seen, earned) }));
+}
+
+export function undoCounterEntry(store: Store, id: string): void {
+  store.update((s) => ({ ...s, counters: removeCounterEntry(s.counters, id) }));
 }

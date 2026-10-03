@@ -128,7 +128,7 @@ describe('region redraw', () => {
   it('matches drawing every layer in full', async () => {
     const { PixelBuffer } = await import('../src/pixel/buffer');
     const { placeCharacter } = await import('../src/pixel/sprites/character');
-    const { TABLE_X, TABLE_Y } = await import('../src/pixel/sprites/room');
+    const { TABLE_X, TABLE_LAYER_Y } = await import('../src/pixel/sprites/room');
     for (const [state, t] of [
       [{ pose: 'stand', face: 'happy' }, 0.15],
       [{ pose: 'sit', face: 'smile' }, 1],
@@ -141,9 +141,40 @@ describe('region redraw', () => {
       if (Math.floor(t * 7) % 9 === 0) full.line(27, 69, 33, 69, hex('6a2a6a'));
       const lift = state.pose === 'stand' && state.face === 'happy' ? hopOffset(t) : 0;
       placeCharacter(full, poseAt(state, t), characterX(state), FLOOR_Y - lift);
-      full.blit(layers.table, TABLE_X, TABLE_Y);
+      full.blit(layers.table, TABLE_X, TABLE_LAYER_Y);
       full.blit(layers.glow, 0, 0);
       expect([...renderScene(state, t).data]).toEqual([...full.data]);
     }
+  });
+});
+
+describe('counter props', () => {
+  it('stacks cans as a 4-3-2-1 pyramid on the counter, capped at 10', async () => {
+    const { canPositions, COUNTER_SLOT } = await import('../src/pixel/sprites/room');
+    expect(canPositions(0)).toEqual([]);
+    const all = canPositions(25);
+    expect(all).toHaveLength(10);
+    expect(all.filter(([, y]) => y === COUNTER_SLOT.y)).toHaveLength(4);
+    for (const [x] of all) {
+      expect(x).toBeGreaterThanOrEqual(COUNTER_SLOT.x0);
+      expect(x + 4).toBeLessThanOrEqual(COUNTER_SLOT.x1);
+    }
+  });
+
+  it('lays wrappers on the table, capped at 10', async () => {
+    const { wrapperPositions } = await import('../src/pixel/sprites/room');
+    expect(wrapperPositions(3)).toHaveLength(3);
+    expect(wrapperPositions(99)).toHaveLength(10);
+    for (const [x] of wrapperPositions(10)) expect(x + 6).toBeLessThan(52);
+  });
+
+  it('draws props into the layers and caches each combination', async () => {
+    const { roomLayers, COUNTER_SLOT } = await import('../src/pixel/sprites/room');
+    const none = roomLayers({ cans: 0, wrappers: 0 });
+    const some = roomLayers({ cans: 3, wrappers: 2 });
+    expect(roomLayers({ cans: 3, wrappers: 2 })).toBe(some);
+    expect(roomLayers({ cans: 30, wrappers: 2 })).toBe(roomLayers({ cans: 10, wrappers: 2 }));
+    expect(none.back.get(COUNTER_SLOT.x0 + 2, COUNTER_SLOT.y - 3)).not.toBe(some.back.get(COUNTER_SLOT.x0 + 2, COUNTER_SLOT.y - 3));
+    expect([...none.table.data]).not.toEqual([...some.table.data]);
   });
 });

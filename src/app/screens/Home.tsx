@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { changeCounter, toggleNothingToday } from '../actions';
-import { COUNTERS, counterTotal, dayHasEntries } from '../../domain/counters';
+import { COUNTERS, counterTotal, dayHasEntries, type CounterDef } from '../../domain/counters';
 import { dayLabel, weekdayLabel } from '../../domain/dates';
 import { characterMood } from '../../domain/mood';
 import { FREEZE_CAP } from '../../domain/rules';
@@ -9,6 +9,7 @@ import { completionFraction, findSession, isComplete, pendingMakeups, targetFor 
 import type { LogicalDay } from '../../domain/types';
 import { ProgressBar } from '../components/ProgressBar';
 import { progressText } from '../format';
+import { CounterHistory } from '../components/CounterHistory';
 import { RoomView } from '../components/RoomView';
 import { useProgress } from '../hooks/useProgress';
 import { useReducedMotion } from '../hooks/useReducedMotion';
@@ -145,6 +146,8 @@ function Counters({ today }: { today: LogicalDay }) {
   const { settings, counters, confirmedZeroDays } = useSave();
   const hasEntries = dayHasEntries(counters, today);
   const confirmedZero = confirmedZeroDays.includes(today);
+  const [historyFor, setHistoryFor] = useState<CounterDef | null>(null);
+  const closeHistory = useCallback(() => setHistoryFor(null), []);
 
   return (
     <section className="card" aria-label="Daily counters">
@@ -155,10 +158,17 @@ function Counters({ today }: { today: LogicalDay }) {
         const over = total > cap;
         return (
           <div key={c.id} className={`counter${over ? ' is-over' : ''}`}>
-            <span className="counter-label">{c.label}</span>
-            <span className="counter-value mono" aria-live="polite">
-              {total} / {cap}
-            </span>
+            <button
+              type="button"
+              className="counter-open"
+              aria-label={`${c.label}: ${total} of ${cap}. Show today's history`}
+              onClick={() => setHistoryFor(c)}
+            >
+              <span className="counter-label">{c.label}</span>
+              <span className="counter-value mono" aria-live="polite">
+                {total} / {cap}
+              </span>
+            </button>
             <button
               type="button"
               className="btn btn-square"
@@ -188,6 +198,8 @@ function Counters({ today }: { today: LogicalDay }) {
       >
         {confirmedZero && !hasEntries ? 'NOTHING TODAY ✓' : 'NOTHING TODAY'}
       </button>
+      <p className="hint">Tap or hold a counter for today's history and undo.</p>
+      {historyFor && <CounterHistory counter={historyFor} day={today} onClose={closeHistory} />}
     </section>
   );
 }

@@ -3,6 +3,7 @@ import { dayLabel } from '../../domain/dates';
 import { RANK_THRESHOLDS, STATS, STAT_LABEL } from '../../domain/rules';
 import { EXERCISE_LABEL } from '../../domain/schedule';
 import { isComplete } from '../../domain/sessions';
+import { Heatmap } from '../components/Heatmap';
 import { ProgressBar } from '../components/ProgressBar';
 import { sessionDetail } from '../format';
 import { useProgress } from '../hooks/useProgress';
@@ -22,6 +23,8 @@ export function Stats() {
       <header className="slab slab-title">
         <h1>STATS</h1>
       </header>
+
+      <Heatmap />
 
       <section className="card" aria-label="Stat ranks">
         <h2 className="card-kicker">RANKS</h2>
@@ -99,8 +102,8 @@ export function Stats() {
         )}
       </section>
 
-      <section className="card" aria-label="History">
-        <h2 className="card-kicker">HISTORY</h2>
+      <details className="card" aria-label="All sessions">
+        <summary className="card-kicker">ALL SESSIONS ({history.length})</summary>
         {history.length === 0 ? (
           <p className="hint">No sessions logged yet.</p>
         ) : (
@@ -116,7 +119,7 @@ export function Stats() {
             ))}
           </ul>
         )}
-      </section>
+      </details>
     </div>
   );
 }

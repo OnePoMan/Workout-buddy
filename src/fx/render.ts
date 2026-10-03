@@ -1,9 +1,8 @@
 import type { RewardItem } from '../domain/rewards';
 import type { PixelBuffer } from '../pixel/buffer';
 import { drawBanner } from './banner';
-import { scrim } from './common';
 import { drawRankUp } from './rankup';
-import { BANNER, RANKUP, SCRIM_FADE, STILL_DUR, TOAST } from './timeline';
+import { BANNER, RANKUP, STILL_DUR, TOAST } from './timeline';
 import { drawToast } from './toast';
 
 /** Toasts never block input; everything else waits for its time or a tap. */
@@ -33,13 +32,10 @@ function seedFor(key: string): number {
 
 /** Draws one reward frame onto a cleared overlay buffer. */
 export function renderReward(buf: PixelBuffer, item: RewardItem, t: number, still: boolean): void {
+  // The dim behind blocking items is a CSS background on the overlay, so DOM
+  // text underneath stays smooth instead of being dithered.
   buf.data.fill(0);
   const dur = rewardDuration(item, still);
-  if (isBlocking(item)) {
-    const fadeIn = still ? 1 : Math.min(1, t / SCRIM_FADE);
-    const fadeOut = still || !Number.isFinite(dur) ? 1 : Math.min(1, (dur - t) / SCRIM_FADE);
-    scrim(buf, Math.min(fadeIn, fadeOut));
-  }
   switch (item.kind) {
     case 'toast':
       drawToast(buf, t, { title: item.title, sub: item.sub, seed: seedFor(item.key) }, dur, still);

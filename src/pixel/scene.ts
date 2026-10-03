@@ -1,7 +1,7 @@
 import { PixelBuffer } from './buffer';
 import { hex } from './color';
 import { CH, CW, characterOrigin, renderCharacter, sit, stand, type Expression, type Pose } from './sprites/character';
-import { FLOOR_Y, NEON, ROOM_H, ROOM_W, SIT_X, STAND_X, TABLE_X, TABLE_Y, roomLayers } from './sprites/room';
+import { FLOOR_Y, NEON, ROOM_H, ROOM_W, SIT_X, STAND_X, TABLE_LAYER_Y, TABLE_X, roomLayers, type RoomProps } from './sprites/room';
 
 export type ScenePose = 'stand' | 'sit';
 export type SceneFace = 'normal' | 'happy' | 'sideeye' | 'look' | 'smile';
@@ -9,6 +9,8 @@ export type SceneFace = 'normal' | 'happy' | 'sideeye' | 'look' | 'smile';
 export interface SceneState {
   pose: ScenePose;
   face: SceneFace;
+  /** Today's Diet Dr Pepper cans and snack wrappers. */
+  props?: RoomProps;
 }
 
 /** Animation clock constants (seconds). */
@@ -63,7 +65,7 @@ function scratch(w: number, h: number): PixelBuffer {
  * rebuilt from the unlit layers and re-lit.
  */
 export function renderScene(state: SceneState, t: number, out = new PixelBuffer(ROOM_W, ROOM_H)): PixelBuffer {
-  const layers = roomLayers();
+  const layers = roomLayers(state.props);
   out.data.set(layers.lit.data);
   if (Math.floor(t * 7) % 9 === 0) {
     // Neon flicker: dim the sign, then re-apply the light over those pixels.
@@ -85,7 +87,7 @@ export function renderScene(state: SceneState, t: number, out = new PixelBuffer(
   const box = scratch(x1 - x0, y1 - y0);
   box.copyRegion(layers.base, x0, y0);
   box.blit(renderCharacter(pose), cx - x0, cy - y0);
-  box.blit(layers.table, TABLE_X - x0, TABLE_Y - y0);
+  box.blit(layers.table, TABLE_X - x0, TABLE_LAYER_Y - y0);
   box.blit(layers.glow, -x0, -y0);
   out.place(box, x0, y0);
   return out;

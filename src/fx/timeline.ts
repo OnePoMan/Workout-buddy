@@ -33,5 +33,3 @@ export const STILL_DUR = {
   banner: 3.0,
   rankup: 3.0,
 } as const;
-
-export const SCRIM_FADE = 0.2;

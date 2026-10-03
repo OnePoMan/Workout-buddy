@@ -35,3 +35,13 @@ export function applyCounterDelta(
   if (entry.delta < 0 && counterTotal(entries, entry.counterId, entry.day) === 0) return [...entries];
   return [...entries, entry];
 }
+
+/** Today's entries for one counter, oldest first. */
+export function counterEntries(entries: readonly CounterEntry[], counterId: string, day: LogicalDay): CounterEntry[] {
+  return entries.filter((e) => e.counterId === counterId && e.day === day).sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+}
+
+/** Removes one entry by id (undo). */
+export function removeCounterEntry(entries: readonly CounterEntry[], id: string): CounterEntry[] {
+  return entries.filter((e) => e.id !== id);
+}

@@ -112,3 +112,26 @@ export function drawOutlinedText(
   }
   drawText(buf, text, x, y, fill, scale);
 }
+
+/** Width of one glyph in pixels at scale 1. */
+export function glyphWidth(ch: string): number {
+  return glyph(ch)[0]!.length;
+}
+
+/** Splits text into lines no wider than maxW (breaking at spaces where possible). */
+export function wrapText(text: string, maxW: number, scale = 1): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let line = '';
+  for (const w of words) {
+    const next = line ? `${line} ${w}` : w;
+    if (line && textWidth(next, scale) > maxW) {
+      lines.push(line);
+      line = w;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}

@@ -643,3 +643,50 @@ p {
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
+
+/* -------------------------------------------------------------- rewards */
+.reward-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: none;
+}
+
+.reward-layer.is-blocking {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.reward-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.reward-more-scrim {
+  align-items: center;
+  padding: var(--gutter);
+  background: rgb(12 10 18 / 0.7);
+}
+
+.reward-more {
+  width: 100%;
+  max-width: 420px;
+  cursor: default;
+  border-color: var(--gold);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

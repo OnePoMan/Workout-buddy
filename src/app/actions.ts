@@ -1,3 +1,4 @@
+import { markSeen, type Earned } from '../domain/achievements';
 import { applyCounterDelta, counterTotal } from '../domain/counters';
 import { newId } from '../domain/ids';
 import { removeSession, upsertSession } from '../domain/sessions';
@@ -40,4 +41,8 @@ export function replaceAll(store: Store, save: SaveFile): void {
 
 export function resetAll(store: Store, today: LogicalDay): void {
   store.update(() => emptySave(today, new Date()));
+}
+
+export function markEarnedSeen(store: Store, earned: Earned[]): void {
+  store.update((s) => ({ ...s, seen: markSeen(s.seen, earned) }));
 }

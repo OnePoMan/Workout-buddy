@@ -1,24 +1,16 @@
-import { LOCKABLE, metricLabel } from '../../domain/achievements';
-import { dayLabel, formatDuration } from '../../domain/dates';
-import type { PbEvent } from '../../domain/progress';
+import { LOCKABLE, formatPbValue, metricLabel } from '../../domain/achievements';
+import { dayLabel } from '../../domain/dates';
 import { RANK_THRESHOLDS, STATS, STAT_LABEL } from '../../domain/rules';
 import { EXERCISE_LABEL } from '../../domain/schedule';
 import { isComplete } from '../../domain/sessions';
-import type { LogicalDay } from '../../domain/types';
 import { ProgressBar } from '../components/ProgressBar';
 import { sessionDetail } from '../format';
 import { useProgress } from '../hooks/useProgress';
 import { useSave } from '../hooks/useStore';
 
-function pbValue(ev: Pick<PbEvent, 'kind' | 'value'>): string {
-  if (ev.kind === 'set') return `${ev.value} REPS`;
-  if (ev.kind === 'time') return formatDuration(ev.value, true);
-  return `${formatDuration(ev.value)}/MI`;
-}
-
-export function Stats({ today }: { today: LogicalDay }) {
+export function Stats() {
   const { sessions } = useSave();
-  const { today: snap, earned } = useProgress(today);
+  const { today: snap, earned } = useProgress();
   const history = [...sessions].sort((a, b) => (a.slot < b.slot ? 1 : -1));
   const bests = Object.values(snap.bests).sort((a, b) => (a.metric < b.metric ? -1 : 1));
   const earnedSorted = [...earned].sort((a, b) => (a.lastOn < b.lastOn ? 1 : a.lastOn > b.lastOn ? -1 : 0));
@@ -67,15 +59,15 @@ export function Stats({ today }: { today: LogicalDay }) {
             <li key={ev.metric}>
               <span>{metricLabel(ev)}</span>
               <span className="mono">
-                {pbValue(ev)} • {dayLabel(ev.day)}
-                {ev.previous !== null && <span className="pb-prev"> (was {pbValue({ kind: ev.kind, value: ev.previous })})</span>}
+                {formatPbValue(ev)} • {dayLabel(ev.day)}
+                {ev.previous !== null && <span className="pb-prev"> (was {formatPbValue({ kind: ev.kind, value: ev.previous })})</span>}
               </span>
             </li>
           ))}
         </ul>
       </section>
 
-      <section className="card" aria-label="Achievements">
+      <section className="card" aria-label="Achievements" id="achievements">
         <h2 className="card-kicker">ACHIEVEMENTS</h2>
         {earnedSorted.length === 0 && <p className="hint">None yet.</p>}
         <ul className="history">

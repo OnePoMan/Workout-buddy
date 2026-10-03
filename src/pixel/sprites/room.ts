@@ -7,6 +7,7 @@ import { PixelBuffer, sprite, type Point } from '../buffer';
 import { hex } from '../color';
 import { ditherVGrad, glowLayer } from '../dither';
 import { C, P } from '../palette';
+import { mulberry32 } from '../rng';
 
 export const ROOM_W = 240;
 export const ROOM_H = 160;
@@ -24,18 +25,6 @@ export const STAND_X = 140;
 export const SIT_X = CHAIR_R_X + 14;
 /** Clear counter space for props (Dr Pepper cans in M5): x range and surface y. */
 export const COUNTER_SLOT = { x0: 160, x1: 184, y: 99 } as const;
-
-/** Small deterministic PRNG so the skyline is identical on every build. */
-function mulberry32(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
 function star(cx: number, cy: number, rOut: number, rIn: number): Point[] {
   return Array.from({ length: 10 }, (_, k) => {

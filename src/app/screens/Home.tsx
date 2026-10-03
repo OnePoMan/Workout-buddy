@@ -36,7 +36,7 @@ export function Home({ today, onLog }: Props) {
 
       <TodayCard today={today} onLog={onLog} />
 
-      {today >= settings.seasonStart && <Streak today={today} />}
+      {today >= settings.seasonStart && <Streak />}
 
       {today >= settings.seasonStart && today <= settings.seasonEnd && (
         <Makeups today={today} onLog={onLog} />
@@ -96,8 +96,8 @@ function TodayCard({ today, onLog }: Props) {
   );
 }
 
-function Streak({ today }: { today: LogicalDay }) {
-  const { today: snap } = useProgress(today);
+function Streak() {
+  const { today: snap } = useProgress();
   return (
     <section className="card streak" aria-label="Streak">
       <div className="streak-main">

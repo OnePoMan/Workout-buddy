@@ -1,4 +1,4 @@
-import { addDays } from './dates';
+import { addDays, formatDuration } from './dates';
 import { snapshot, type PbEvent, type Snapshot } from './progress';
 import { CAP_RUN_DAYS, MAX_RANK, MILE_IMPROVE_SEC, STATS, STAT_LABEL, STREAK_MILESTONES, type Stat } from './rules';
 import { EXERCISE_LABEL } from './schedule';
@@ -11,6 +11,8 @@ export interface AchievementDef {
   id: string;
   name: string;
   description: string;
+  /** Short line for the reward banner (pixel font: A–Z, 0–9, basic punctuation). */
+  tagline: string;
   tier: Tier;
   repeatable: boolean;
   kind: 'achievement' | 'rank' | 'record';
@@ -26,7 +28,8 @@ export interface Earned {
 
 const STREAK_NAMES: Record<number, string> = { 6: 'ON A ROLL', 12: 'HOT STREAK', 24: 'UNSTOPPABLE', 48: 'LEGENDARY' };
 
-const def = (d: Omit<AchievementDef, 'repeatable' | 'kind'> & Partial<AchievementDef>): AchievementDef => ({
+const def = (d: Omit<AchievementDef, 'repeatable' | 'kind' | 'tagline'> & Partial<AchievementDef>): AchievementDef => ({
+  tagline: d.name,
   repeatable: false,
   kind: 'achievement',
   ...d,
@@ -49,7 +52,13 @@ function bestRunPace(s: Snapshot): number | undefined {
 
 const DAILY_RULES: DailyRule[] = [
   {
-    def: def({ id: 'first_session', name: 'FIRST REP', description: 'Complete your first session.', tier: 2 }),
+    def: def({
+      id: 'first_session',
+      name: 'FIRST REP',
+      description: 'Complete your first session.',
+      tagline: 'FIRST SESSION DONE',
+      tier: 2,
+    }),
     test: (s) => s.completedSessions >= 1,
   },
   ...EXERCISES.map((ex: Exercise) => ({
@@ -57,12 +66,19 @@ const DAILY_RULES: DailyRule[] = [
       id: `first_${ex}`,
       name: `FIRST ${EXERCISE_LABEL[ex]}`,
       description: `Complete your first ${EXERCISE_LABEL[ex].toLowerCase()} session.`,
+      tagline: 'NEW EXERCISE CLEARED',
       tier: 1 as Tier,
     }),
     test: (s: Snapshot) => s.completedByExercise[ex] >= 1,
   })),
   ...STREAK_MILESTONES.map((n) => ({
-    def: def({ id: `streak_${n}`, name: STREAK_NAMES[n] ?? `STREAK ${n}`, description: `Reach a streak of ${n} sessions.`, tier: 2 as Tier }),
+    def: def({
+      id: `streak_${n}`,
+      name: STREAK_NAMES[n] ?? `STREAK ${n}`,
+      description: `Reach a streak of ${n} sessions.`,
+      tagline: `${n} SESSIONS IN A ROW`,
+      tier: 2 as Tier,
+    }),
     test: (s: Snapshot) => s.longestStreak >= n,
   })),
   {
@@ -70,6 +86,7 @@ const DAILY_RULES: DailyRule[] = [
       id: 'cap_7',
       name: 'IRON WILL',
       description: `Stay under both caps for ${CAP_RUN_DAYS} days in a row.`,
+      tagline: `${CAP_RUN_DAYS} DAYS UNDER THE CAPS`,
       tier: 2,
     }),
     test: (s) => s.longestDisciplineRun >= CAP_RUN_DAYS,
@@ -79,6 +96,7 @@ const DAILY_RULES: DailyRule[] = [
       id: 'mile_improve_30',
       name: 'SPEED DEMON',
       description: `Run ${MILE_IMPROVE_SEC} s per mile faster than your first run.`,
+      tagline: `${MILE_IMPROVE_SEC} S/MI FASTER THAN DAY ONE`,
       tier: 2,
     }),
     test: (s) => {
@@ -93,6 +111,7 @@ const DAILY_RULES: DailyRule[] = [
         id: `rank_${st}_${n}`,
         name: `${STAT_LABEL[st]} RANK ${n}`,
         description: `Reach ${STAT_LABEL[st]} rank ${n}.`,
+        tagline: `RANK ${n}`,
         tier: 2 as Tier,
         kind: 'rank' as const,
       }),
@@ -105,6 +124,7 @@ export const PERFECT_WEEK = def({
   id: 'perfect_week',
   name: 'PERFECT WEEK',
   description: 'Complete all 6 sessions in a Monday–Sunday week.',
+  tagline: 'ALL 6 SESSIONS DONE',
   tier: 3,
   repeatable: true,
 });
@@ -113,8 +133,16 @@ export const SEASON_COMPLETE = def({
   id: 'season_complete',
   name: 'FALL 2026 CLEAR',
   description: 'Reach the end of the season.',
+  tagline: 'SEE YOU NEXT SEASON',
   tier: 4,
 });
+
+/** "30 REPS", "1:20.0", "9:35/MI". */
+export function formatPbValue(ev: Pick<PbEvent, 'kind' | 'value'>): string {
+  if (ev.kind === 'set') return `${ev.value} REPS`;
+  if (ev.kind === 'time') return formatDuration(ev.value, true);
+  return `${formatDuration(ev.value)}/MI`;
+}
 
 /** "MOST PUSH-UPS IN ONE SET", "FASTEST 30 PUSH-UPS", "BEST 1 MI PACE". */
 export function metricLabel(ev: Pick<PbEvent, 'kind' | 'exercise' | 'target'>): string {
@@ -129,6 +157,7 @@ export function recordDef(ev: PbEvent): AchievementDef {
     id: `pb_${ev.metric}`,
     name: 'NEW RECORD',
     description: metricLabel(ev),
+    tagline: metricLabel(ev),
     tier: 2,
     repeatable: true,
     kind: 'record',

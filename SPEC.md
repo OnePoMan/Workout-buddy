@@ -220,6 +220,15 @@ achievement stores the date it was earned and a `seen` flag.
   replay on the next app open.
 - Settings has a "Reduce motion" option, which follows `prefers-reduced-motion`
   by default. It replaces every tier with a static card.
+- *(As built in M4)*
+  - Several T1 firsts in one batch merge into a single toast ("4 FIRSTS!").
+  - Several ranks of one stat merge into one bar (e.g. RANK 1 > 3).
+  - Record banners show the metric and the new value on two lines.
+  - Blocking items dim the screen with a dithered scrim. Tap, Escape, Enter
+    or Space skips; toasts never block taps.
+  - The overlay spans the app column (max 560 px) at the same integer pixel
+    scale as the room, and announces each reward to screen readers.
+  - Until M6, T3 and T4 items play as a full T2 banner.
 
 ---
 
@@ -257,12 +266,17 @@ achievement stores the date it was earned and a `seen` flag.
 | Dumbbells on the floor | STRENGTH rank 3 | Room |
 | Neon running shoes (replace the white sneakers) | STAMINA rank 2 | Outfit |
 | Headband | First perfect week | Outfit |
+| Ponytail hairstyle | Streak 12 (HOT STREAK) | Hair (toggle) |
 | Trophy shelf (shows top personal bests) | First personal best | Room |
 | Wall calendar (shows the streak number) | Streak 6 | Room |
 | Window plant grows (3 stages) | DISCIPLINE ranks 3 / 6 / 9 | Room |
 | Poster swaps to a medal | Season complete | Room |
 
 - Unlocks appear automatically and cannot be removed or rearranged in v1.
+- Exception: the ponytail is a hairstyle option. When it unlocks the
+  character switches to it, and Settings gains a HAIR: DOWN / PONYTAIL toggle.
+  It needs a redrawn head sprite (back hair gathered, a tie, the tail
+  swinging slightly with the idle animation).
 
 ### 6.3 Counter props
 - Each Diet Dr Pepper logged that day shows as a pixel can on the kitchen
@@ -502,7 +516,7 @@ tests/            Vitest specs for domain/ and storage/
    - Scaling, sprite pipeline, palette and font.
    - Port the character and build the 240x160 room.
    - Idle animation and expressions.
-4. **Rewards:** T1 toast, T2 banner and rank-up bar, the reward queue, reduce
+4. **Rewards:** *(done)* T1 toast, T2 banner and rank-up bar, the reward queue, reduce
    motion.
 5. **Counters and stats:**
    - Counters with cans and wrappers in the room.

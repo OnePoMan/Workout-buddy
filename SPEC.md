@@ -128,10 +128,15 @@ This module is the main target for unit tests.
     sessions, oldest first.
   - A frozen session keeps the streak alive but does not add to it.
 - The longest streak is tracked as its own personal best.
+- The last season week (Dec 28–31) is finalised when the season ends, not on
+  the following Sunday.
 
 ### 4.2 Perfect week
 - All 6 scheduled sessions in a Monday–Sunday week reach fraction 1 by the end
   of that week. Make-ups count.
+- Weeks with fewer than 6 in-season slots (the first and last season weeks)
+  cannot be perfect.
+- The freeze is banked as soon as the week becomes perfect.
 
 ### 4.3 Stats and ranks
 
@@ -152,6 +157,8 @@ This module is the main target for unit tests.
   - Days with no data earn nothing. A day that went over the cap also earns
     nothing.
   - Qualification is decided at day rollover.
+  - Caps are not snapshotted: changing a cap re-scores past days.
+- Global personal bests (longest streak, perfect weeks in a row) earn no bonus.
 - **Rank thresholds** (cumulative points, ranks 1–10) *(tunable)*:
   `0, 15, 35, 60, 90, 125, 165, 205, 245, 285`.
   A perfect 13-week season gives about 260 points per stat before personal-best
@@ -167,6 +174,10 @@ This module is the main target for unit tests.
 
 - The first logged value of each personal best sets a baseline. It counts as a
   personal best for the bonus, but it does not trigger the PB animation.
+- Time and pace records are kept per target, so changing a target starts a new
+  baseline. Runs are compared by pace (seconds per mile), so a longer run at a
+  faster pace counts. A tie is not a record.
+- Records are ordered by the day the session was logged.
 
 ### 4.5 Achievements (initial set)
 
@@ -179,7 +190,7 @@ This module is the main target for unit tests.
 | `perfect_week` | PERFECT WEEK | Each perfect week (repeatable) | T3 |
 | `rank_<stat>_<n>` | RANK UP | Any stat reaches a new rank | T2 rank-up bar |
 | `cap_7` | IRON WILL | 7 days in a row qualifying for DISCIPLINE | T2 |
-| `mile_improve_30` | SPEED DEMON | Run time 30 s faster than the first run | T2 |
+| `mile_improve_30` | SPEED DEMON | Run pace 30 s/mi faster than the first run | T2 |
 | `season_complete` | FALL 2026 CLEAR | Season ends, shown with a summary | T4 |
 
 Repeatable achievements store how many times they were earned. Each one-time
@@ -467,7 +478,7 @@ tests/            Vitest specs for domain/ and storage/
    - Pulled forward: the two counters (+/−, "Nothing today") and export/import.
      Still deferred: counter long-press history (M5) and the DOM pixel font
      (system fonts until then).
-2. **Rules engine:**
+2. **Rules engine:** *(done)*
    - Streak, freezes, make-ups, stats, ranks, personal bests and achievements,
      with full Vitest coverage.
 3. **Pixel renderer:**

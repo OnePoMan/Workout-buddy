@@ -6,7 +6,9 @@ import { completionFraction, findSession, isComplete, pendingMakeups, targetFor 
 import type { LogicalDay } from '../../domain/types';
 import { ProgressBar } from '../components/ProgressBar';
 import { progressText } from '../format';
+import { useProgress } from '../hooks/useProgress';
 import { useSave, useStoreApi } from '../hooks/useStore';
+import { FREEZE_CAP } from '../../domain/rules';
 
 interface Props {
   today: LogicalDay;
@@ -25,6 +27,8 @@ export function Home({ today, onLog }: Props) {
       </header>
 
       <TodayCard today={today} onLog={onLog} />
+
+      {today >= settings.seasonStart && <Streak today={today} />}
 
       {today >= settings.seasonStart && today <= settings.seasonEnd && (
         <Makeups today={today} onLog={onLog} />
@@ -80,6 +84,34 @@ function TodayCard({ today, onLog }: Props) {
           {session ? 'EDIT' : 'LOG'}
         </button>
       </div>
+    </section>
+  );
+}
+
+function Streak({ today }: { today: LogicalDay }) {
+  const { today: snap } = useProgress(today);
+  return (
+    <section className="card streak" aria-label="Streak">
+      <div className="streak-main">
+        <span className="streak-num mono">{snap.streak}</span>
+        <span className="streak-label">STREAK</span>
+      </div>
+      <dl className="streak-meta">
+        <div>
+          <dt>BEST</dt>
+          <dd className="mono">{snap.longestStreak}</dd>
+        </div>
+        <div>
+          <dt>FREEZES</dt>
+          <dd className="mono">
+            {snap.freezesBanked}/{FREEZE_CAP}
+          </dd>
+        </div>
+        <div>
+          <dt>PERFECT WEEKS</dt>
+          <dd className="mono">{snap.perfectWeeks}</dd>
+        </div>
+      </dl>
     </section>
   );
 }

@@ -547,3 +547,83 @@ p {
     transition: none !important;
   }
 }
+
+/* --------------------------------------------------------------- streak */
+.streak {
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+}
+
+.streak-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 84px;
+  padding: 6px 10px;
+  background: var(--black);
+  border: 2px solid var(--gold);
+  clip-path: polygon(6% 0, 100% 0, 94% 100%, 0 100%);
+}
+
+.streak-num {
+  font-size: 2.4rem;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--gold);
+}
+
+.streak-label {
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+}
+
+.streak-meta {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+
+.streak-meta dt {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+.streak-meta dd {
+  margin: 2px 0 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+/* ---------------------------------------------------------------- stats */
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.ach-desc {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+  letter-spacing: normal;
+}
+
+.history.is-locked li {
+  opacity: 0.55;
+}
+
+.pb-prev {
+  color: var(--muted);
+}

@@ -47,7 +47,7 @@ export function App({ loadStatus }: { loadStatus: LoadStatus }) {
 
       <main className="main">
         {tab === 'home' && <Home today={today} onLog={setLogSlot} />}
-        {tab === 'stats' && <Stats />}
+        {tab === 'stats' && <Stats today={today} />}
         {tab === 'settings' && <Settings today={today} />}
       </main>
 

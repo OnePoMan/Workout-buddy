@@ -459,11 +459,14 @@ tests/            Vitest specs for domain/ and storage/
 
 ## 12. Milestones
 
-1. **Skeleton:**
+1. **Skeleton:** *(done)*
    - Vite/React/TS app, PWA manifest and service worker, storage with
      migrations.
    - Schedule and rollover logic.
    - Home, Log and Settings with DOM-only UI.
+   - Pulled forward: the two counters (+/−, "Nothing today") and export/import.
+     Still deferred: counter long-press history (M5) and the DOM pixel font
+     (system fonts until then).
 2. **Rules engine:**
    - Streak, freezes, make-ups, stats, ranks, personal bests and achievements,
      with full Vitest coverage.

@@ -36,6 +36,8 @@ export function LogSheet({ slot, today, onClose }: Props) {
   const [minutes, setMinutes] = useState(existing?.durationSec !== undefined && isRun ? String(Math.floor(existing.durationSec / 60)) : '');
   const [seconds, setSeconds] = useState(existing?.durationSec !== undefined && isRun ? String(Math.floor(existing.durationSec % 60)) : '');
   const stopwatch = useStopwatch(!isRun ? (existing?.durationSec ?? 0) : 0);
+  // Run time is typed in after the fact by default; the stopwatch is opt-in.
+  const [timeMode, setTimeMode] = useState<'manual' | 'stopwatch'>('manual');
 
   const repsDone = totalReps(sets);
 
@@ -48,6 +50,7 @@ export function LogSheet({ slot, today, onClose }: Props) {
   const distanceNum = Number.parseFloat(distance);
   const timePart = (text: string) => Math.max(0, Number.parseInt(text || '0', 10) || 0);
   const runSec = timePart(minutes) * 60 + timePart(seconds);
+  const secondsInvalid = isRun && seconds !== '' && timePart(seconds) > 59;
 
   const draft: SessionLog = {
     id: existing?.id ?? newId(),
@@ -65,10 +68,21 @@ export function LogSheet({ slot, today, onClose }: Props) {
     if (stopwatch.elapsed > 0) draft.durationSec = Math.round(stopwatch.elapsed * 10) / 10;
   }
 
-  const canSave = isRun ? (draft.distance ?? 0) > 0 : sets.length > 0;
+  const canSave = isRun ? (draft.distance ?? 0) > 0 && !secondsInvalid : sets.length > 0;
   const dirty = existing
     ? !sameContent(draft, existing)
     : sets.length > 0 || (isRun && runSec > 0) || stopwatch.elapsed > 0;
+
+  const fillRunTime = (sec: number) => {
+    setMinutes(String(Math.floor(sec / 60)));
+    setSeconds(String(Math.floor(sec % 60)));
+  };
+
+  const chooseTimeMode = (mode: 'manual' | 'stopwatch') => {
+    // Leaving a running stopwatch keeps its time as the typed value.
+    if (mode === 'manual' && stopwatch.running) fillRunTime(stopwatch.stop());
+    setTimeMode(mode);
+  };
 
   const close = () => {
     if (dirty && !window.confirm('Discard unsaved changes?')) return;
@@ -161,37 +175,64 @@ export function LogSheet({ slot, today, onClose }: Props) {
               />
             </label>
             <div className="field">
-              <span>TIME</span>
-              <div className="time-inputs">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  placeholder="mm"
-                  aria-label="Minutes"
-                  value={minutes}
-                  onChange={(e) => setMinutes(e.target.value)}
-                />
-                <span>:</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min="0"
-                  max="59"
-                  placeholder="ss"
-                  aria-label="Seconds"
-                  value={seconds}
-                  onChange={(e) => setSeconds(e.target.value)}
-                />
+              <span id="run-time-label">TIME</span>
+              <div className="segmented" role="group" aria-labelledby="run-time-label">
+                <button
+                  type="button"
+                  className={`btn${timeMode === 'manual' ? ' is-active' : ''}`}
+                  aria-pressed={timeMode === 'manual'}
+                  onClick={() => chooseTimeMode('manual')}
+                >
+                  ENTER TIME
+                </button>
+                <button
+                  type="button"
+                  className={`btn${timeMode === 'stopwatch' ? ' is-active' : ''}`}
+                  aria-pressed={timeMode === 'stopwatch'}
+                  onClick={() => chooseTimeMode('stopwatch')}
+                >
+                  STOPWATCH
+                </button>
               </div>
             </div>
-            <StopwatchPanel
-              stopwatch={stopwatch}
-              onStop={(sec) => {
-                setMinutes(String(Math.floor(sec / 60)));
-                setSeconds(String(Math.floor(sec % 60)));
-              }}
-            />
+            {timeMode === 'manual' ? (
+              <div className={`field${secondsInvalid ? ' has-error' : ''}`}>
+                <div className="time-inputs">
+                  <label className="time-part">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      placeholder="0"
+                      value={minutes}
+                      onChange={(e) => setMinutes(e.target.value)}
+                    />
+                    <span>MIN</span>
+                  </label>
+                  <span className="time-sep">:</span>
+                  <label className="time-part">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min="0"
+                      max="59"
+                      placeholder="00"
+                      value={seconds}
+                      onChange={(e) => setSeconds(e.target.value)}
+                    />
+                    <span>SEC</span>
+                  </label>
+                </div>
+                {secondsInvalid && <small className="field-error">Seconds must be 0–59.</small>}
+              </div>
+            ) : (
+              <StopwatchPanel stopwatch={stopwatch} onStop={fillRunTime} />
+            )}
+            {runSec > 0 && (draft.distance ?? 0) > 0 && (
+              <p className="hint mono">
+                {formatDuration(runSec)} • {formatDuration(runSec / draft.distance!)}/MI PACE
+              </p>
+            )}
           </section>
         ) : (
           <>

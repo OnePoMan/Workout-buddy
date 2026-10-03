@@ -3,6 +3,12 @@ import type { Exercise, LogicalDay, Settings } from './types';
 
 export const SEASON_END: LogicalDay = '2026-12-31';
 
+/** Earliest allowed season start. Bounds the day-by-day replay in the rules engine. */
+export const SEASON_EARLIEST_START: LogicalDay = '2026-01-01';
+
+/** Upper bound for a single strength set. */
+export const MAX_REPS_PER_SET = 500;
+
 export const DEFAULT_ROLLOVER_HOUR = 3;
 
 export const DEFAULT_TARGETS: Record<Exercise, number> = {

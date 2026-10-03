@@ -3,9 +3,9 @@ import { replaceAll, resetAll, updateSettings } from '../actions';
 import { CAP_MAX, CAP_MIN, COUNTERS } from '../../domain/counters';
 import { dayLabel, isValidDay } from '../../domain/dates';
 import { EXERCISE_LABEL } from '../../domain/schedule';
-import { TARGET_LIMITS, isValidCap, isValidTarget } from '../../domain/settings';
+import { SEASON_EARLIEST_START, TARGET_LIMITS, isValidCap, isValidTarget } from '../../domain/settings';
 import { EXERCISES, type LogicalDay, type ReduceMotion } from '../../domain/types';
-import { exportFileName, parseImport, serialize } from '../../storage/exportImport';
+import { MAX_IMPORT_BYTES, exportFileName, parseImport, serialize } from '../../storage/exportImport';
 import { useSave, useStoreApi } from '../hooks/useStore';
 
 interface NumberFieldProps {
@@ -68,12 +68,14 @@ export function Settings({ today }: { today: LogicalDay }) {
     a.href = url;
     a.download = exportFileName(today);
     a.click();
-    URL.revokeObjectURL(url);
+    // Revoking in the same tick can cancel the download in some browsers.
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
     setMessage({ kind: 'ok', text: `Exported ${a.download}.` });
   };
 
   const doImport = async (file: File) => {
     try {
+      if (file.size > MAX_IMPORT_BYTES) throw new Error('That file is too large to be a Workout Buddy export.');
       const imported = parseImport(await file.text());
       if (!window.confirm('Replace ALL current data with this file? This cannot be undone.')) return;
       replaceAll(store, imported);
@@ -139,10 +141,13 @@ export function Settings({ today }: { today: LogicalDay }) {
           <input
             type="date"
             value={settings.seasonStart}
+            min={SEASON_EARLIEST_START}
             max={settings.seasonEnd}
             onChange={(e) => {
               const v = e.target.value;
-              if (isValidDay(v) && v <= settings.seasonEnd) updateSettings(store, { seasonStart: v });
+              if (isValidDay(v) && v >= SEASON_EARLIEST_START && v <= settings.seasonEnd) {
+                updateSettings(store, { seasonStart: v });
+              }
             }}
           />
         </label>

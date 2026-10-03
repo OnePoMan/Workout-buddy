@@ -1,5 +1,12 @@
 import { isValidDay } from '../domain/dates';
-import { isValidCap, isValidRolloverHour, isValidTarget } from '../domain/settings';
+import { exerciseFor } from '../domain/schedule';
+import {
+  MAX_REPS_PER_SET,
+  SEASON_EARLIEST_START,
+  isValidCap,
+  isValidRolloverHour,
+  isValidTarget,
+} from '../domain/settings';
 import {
   EXERCISES,
   SCHEMA_VERSION,
@@ -13,6 +20,9 @@ import {
 export class MigrationError extends Error {}
 
 type Obj = Record<string, unknown>;
+
+/** Sanity bound on sets per session; far above any real log. */
+const MAX_SETS = 1000;
 
 function isObj(v: unknown): v is Obj {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -54,6 +64,7 @@ function parseSettings(v: unknown): Settings {
   const seasonStart = day(v, 'seasonStart', p);
   const seasonEnd = day(v, 'seasonEnd', p);
   if (seasonStart > seasonEnd) fail(`${p}.seasonStart`, 'must not be after seasonEnd');
+  if (seasonStart < SEASON_EARLIEST_START) fail(`${p}.seasonStart`, `must not be before ${SEASON_EARLIEST_START}`);
 
   const rolloverHour = num(v, 'rolloverHour', p);
   if (!isValidRolloverHour(rolloverHour)) fail(`${p}.rolloverHour`, 'expected an integer 0–23');
@@ -92,9 +103,14 @@ function parseSession(v: unknown, i: number): SessionLog {
     target: num(v, 'target', p),
     updatedAt: str(v, 'updatedAt', p),
   };
+  if (exerciseFor(s.slot) !== s.exercise) fail(`${p}.exercise`, `not scheduled on ${s.slot}`);
   if (v.sets !== undefined) {
-    if (!Array.isArray(v.sets) || !v.sets.every((n) => Number.isInteger(n) && n > 0)) {
-      fail(`${p}.sets`, 'expected positive integers');
+    if (
+      !Array.isArray(v.sets) ||
+      v.sets.length > MAX_SETS ||
+      !v.sets.every((n) => Number.isInteger(n) && n > 0 && n <= MAX_REPS_PER_SET)
+    ) {
+      fail(`${p}.sets`, `expected at most ${MAX_SETS} integers 1–${MAX_REPS_PER_SET}`);
     }
     s.sets = v.sets as number[];
   }

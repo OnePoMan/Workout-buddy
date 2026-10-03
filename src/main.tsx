@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
+import { ErrorBoundary } from './app/components/ErrorBoundary';
 import { StoreContext } from './app/hooks/useStore';
 import { logicalDay } from './domain/dates';
 import { DEFAULT_ROLLOVER_HOUR } from './domain/settings';
@@ -17,8 +18,10 @@ if (status.kind === 'new' || status.kind === 'recovered') persist(kv, save);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <StoreContext.Provider value={store}>
-      <App loadStatus={status} />
-    </StoreContext.Provider>
+    <ErrorBoundary>
+      <StoreContext.Provider value={store}>
+        <App loadStatus={status} />
+      </StoreContext.Provider>
+    </ErrorBoundary>
   </StrictMode>,
 );

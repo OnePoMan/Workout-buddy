@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { deleteSession, saveSession } from '../actions';
 import { dayLabel, formatDuration } from '../../domain/dates';
 import { newId } from '../../domain/ids';
 import { EXERCISE_LABEL, formatTarget, type Slot } from '../../domain/schedule';
+import { MAX_REPS_PER_SET } from '../../domain/settings';
 import { completionFraction, findSession, isEditable, sameContent, targetFor, totalReps } from '../../domain/sessions';
 import type { LogicalDay, SessionLog } from '../../domain/types';
 import { ProgressBar } from '../components/ProgressBar';
@@ -15,8 +16,6 @@ interface Props {
   today: LogicalDay;
   onClose(): void;
 }
-
-const MAX_REPS_PER_SET = 500;
 
 export function LogSheet({ slot, today, onClose }: Props) {
   const store = useStoreApi();
@@ -43,7 +42,8 @@ export function LogSheet({ slot, today, onClose }: Props) {
   }, [isRun, running, repsDone, target, stop]);
 
   const distanceNum = Number.parseFloat(distance);
-  const runSec = (Number.parseInt(minutes || '0', 10) || 0) * 60 + (Number.parseInt(seconds || '0', 10) || 0);
+  const timePart = (text: string) => Math.max(0, Number.parseInt(text || '0', 10) || 0);
+  const runSec = timePart(minutes) * 60 + timePart(seconds);
 
   const draft: SessionLog = {
     id: existing?.id ?? newId(),
@@ -70,6 +70,19 @@ export function LogSheet({ slot, today, onClose }: Props) {
     if (dirty && !window.confirm('Discard unsaved changes?')) return;
     onClose();
   };
+
+  // Escape closes the sheet like the × button.
+  const closeRef = useRef(close);
+  useEffect(() => {
+    closeRef.current = close;
+  });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRef.current();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   const commitSet = () => {
     if (editing !== null) {

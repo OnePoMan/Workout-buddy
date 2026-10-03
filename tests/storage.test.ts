@@ -82,6 +82,31 @@ describe('migrate', () => {
     s.sessions.push({ ...s.sessions[0]!, id: 'b' });
     expect(() => migrate(JSON.parse(JSON.stringify(s)))).toThrow(/duplicate slot/);
   });
+
+  it('rejects a session whose exercise is not scheduled on its slot', () => {
+    const bad = JSON.parse(JSON.stringify(sample()));
+    bad.sessions[0].exercise = 'pushups';
+    bad.sessions[0].sets = [30];
+    expect(() => migrate(bad)).toThrow(/sessions\[0\]\.exercise/);
+  });
+
+  it('rejects out-of-range or oversized set lists', () => {
+    const strength = (sets: number[]) => {
+      const s = JSON.parse(JSON.stringify(sample()));
+      s.sessions[0] = { ...s.sessions[0], slot: '2026-10-05', loggedOn: '2026-10-05', exercise: 'pushups', target: 30, sets };
+      delete s.sessions[0].distance;
+      return s;
+    };
+    expect(() => migrate(strength([30]))).not.toThrow();
+    expect(() => migrate(strength([501]))).toThrow(/sessions\[0\]\.sets/);
+    expect(() => migrate(strength(Array.from({ length: 1001 }, () => 1)))).toThrow(/sessions\[0\]\.sets/);
+  });
+
+  it('rejects a season start before the earliest allowed date', () => {
+    const bad = JSON.parse(JSON.stringify(sample()));
+    bad.settings.seasonStart = '1901-01-01';
+    expect(() => migrate(bad)).toThrow(/settings\.seasonStart/);
+  });
 });
 
 describe('load / persist', () => {

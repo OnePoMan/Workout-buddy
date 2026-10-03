@@ -60,6 +60,9 @@ expected to change after playtesting.
   - Starts on the first launch date. Settings can change the start date.
   - Ends on 2026-12-31.
   - Weeks before the start date are excluded from every calculation.
+- **Dates:** every day is shown with its calendar date as `SAT 10/3`
+  (weekday, month/day), including the Today card, make-up chips, the log
+  sheet, the heatmap and history.
 - **Day rollover:** happens at 03:00 local time by default. Settings can change
   the hour. For example, a can logged at 01:00 counts toward the previous day.
   All dates are stored as local `YYYY-MM-DD` "logical days" after this offset
@@ -220,14 +223,31 @@ achievement stores the date it was earned and a `seen` flag.
   replay on the next app open.
 - Settings has a "Reduce motion" option, which follows `prefers-reduced-motion`
   by default. It replaces every tier with a static card.
+- *(As built in M4)*
+  - Several T1 firsts in one batch merge into a single toast ("4 FIRSTS!").
+  - Several ranks of one stat merge into one bar (e.g. RANK 1 > 3).
+  - Record banners show the metric and the new value on two lines.
+  - Blocking items dim the screen with a smooth CSS dim (a dithered scrim
+    made the DOM text underneath look glitchy). Tap, Escape, Enter or Space
+    skips; toasts never block taps.
+  - The overlay spans the app column (max 560 px) at the same integer pixel
+    scale as the room, and announces each reward to screen readers.
+  - *(M6)* T3 is 10 s: shard wipe, character cut-in (current outfit), ray
+    burst, banner, the week's points per stat, freeze callout. T4 is 22 s:
+    title card, shards, the character over rays with the banner, final
+    ranks, season numbers, star iris, then a SEASON SUMMARY card (also shown
+    on Stats once the season is over). The summary card does not count
+    toward the three-in-a-row cap.
 
 ---
 
 ## 6. Room and character progression
 
 ### 6.1 Character
-- Reuses the video character: brown hair, red glasses, teal top, navy pants,
-  pink socks.
+- Reuses the video character: brown hair and red glasses, now in workout
+  clothes: a teal zip-up track jacket with sleeves pushed to the elbows, a
+  pink sports tank at the neckline, dark joggers with a side stripe,
+  drawstring and ankle cuffs, and white sneakers with pink accents.
 - The head and torso are ASCII sprites. The arms and legs are drawn as jointed
   lines, as in `character.py`.
 
@@ -238,28 +258,47 @@ achievement stores the date it was earned and a `seen` flag.
 | side-eye | A counter is over its cap |
 | relax (on the couch or at the table) | Sunday |
 | look | Pending make-ups exist |
+| sideeye | (new expression) heavy lids, eyes on the camera, one-sided mouth |
+
+- Face priority: over a cap > completed a session today > make-ups pending >
+  rest day (smile) > idle. Pose is seated on Sunday and outside the season.
+- Idle animation runs at 12 fps: blink every 4.2 s (double blink every third
+  cycle), breathing, a small hop when happy, and the window's neon sign
+  flickering.
 
 ### 6.2 Unlocks (*tunable* mapping)
 
 | Unlock | Condition | Type |
 |---|---|---|
-| Pull-up bar in the doorway | BACK rank 2 | Room |
+| Pull-up bar in the hall doorway (a doorway was added behind the character) | BACK rank 2 | Room |
 | Yoga mat | LEGS rank 2 | Room |
 | Dumbbells on the floor | STRENGTH rank 3 | Room |
-| Running shoes | STAMINA rank 2 | Outfit |
+| Neon running shoes (replace the white sneakers) | STAMINA rank 2 | Outfit |
 | Headband | First perfect week | Outfit |
+| Ponytail hairstyle | Streak 12 (HOT STREAK) | Hair (toggle) |
 | Trophy shelf (shows top personal bests) | First personal best | Room |
-| Wall calendar (shows the streak number) | Streak 6 | Room |
+| Calendar on the fridge (shows the streak number) | Streak 6 | Room |
 | Window plant grows (3 stages) | DISCIPLINE ranks 3 / 6 / 9 | Room |
 | Poster swaps to a medal | Season complete | Room |
 
 - Unlocks appear automatically and cannot be removed or rearranged in v1.
+- *(As built in M6)* Each reward that grants an unlock says so ("NEW:
+  HEADBAND") on its banner or rank-up bar and in its announcement. Stats lists
+  every unlock with its condition. The trophy shelf holds one trophy per
+  record metric (up to 4).
+- Exception: the ponytail is a hairstyle option. When it unlocks the
+  character switches to it, and Settings gains a HAIR: DOWN / PONYTAIL toggle.
+  It needs a redrawn head sprite (back hair gathered, a tie, the tail
+  swinging slightly with the idle animation).
 
 ### 6.3 Counter props
 - Each Diet Dr Pepper logged that day shows as a pixel can on the kitchen
   counter.
 - Each snack shows as a wrapper.
 - Both reset at rollover.
+- *(As built in M5)* Cans stand in a 4-3-2-1 pyramid on the counter and
+  wrappers lie on the tablecloth (chips, candy and granola colours in turn).
+  Up to 10 of each are drawn; the counter shows the true total.
 
 ---
 
@@ -272,6 +311,9 @@ achievement stores the date it was earned and a `seen` flag.
 
 - Home has +/− buttons for each counter. A long press opens a small history of
   that day's entries. Each entry stores a timestamp, so undo works.
+  *(As built in M5)* Tapping the counter name or value also opens it, so it
+  works without a long press and from the keyboard. UNDO LAST removes the
+  latest entry.
 - Caps are editable in Settings, from 0 to 20.
 - **Going over the cap:**
   - The counter turns red and the character side-eyes.
@@ -291,7 +333,7 @@ The layout is phone-first and portrait. Navigation is a bottom tab bar:
 ### 8.1 Home
 - **Top:** the room scene in a canvas, showing the character and unlocks.
 - **Below the room:**
-  - Today's card, for example "THU • 30 PUSH-UPS" with a progress bar and a
+  - Today's card, for example "THU 10/8 • TODAY / 30 PUSH-UPS" with a progress bar and a
     "LOG" button. On Sunday it reads "REST DAY".
   - Make-up chips, if any.
   - The streak counter, plus the number of banked freezes.
@@ -307,6 +349,12 @@ The layout is phone-first and portrait. Navigation is a bottom tab bar:
 ### 8.3 Stats
 - **Heatmap:**
   - Weeks as columns and Mon–Sun as rows, for the whole season.
+  - *(As built in M5)* One-hue teal ramp (dark → bright on the dark card),
+    checked as an ordinal ramp: monotone lightness, visible steps, and the
+    lightest step clears the surface. Upcoming days are dashed outlines,
+    today has a gold outline, and every cell has a text label. The full
+    session list sits below in a collapsible ALL SESSIONS section as the
+    table view.
   - Shading is in 4 steps from 0 to 100% completion.
   - Sundays are greyed out. Frozen sessions show a freeze icon.
   - Tapping a cell shows that day's sessions and counters.
@@ -337,6 +385,14 @@ The layout is phone-first and portrait. Navigation is a bottom tab bar:
   - A 390 px wide phone gets `S=2`, a 195 px native width.
 - Canvases are drawn at native size, then scaled up by CSS with
   `image-rendering: pixelated`.
+- *(As built in M3)* `S` is chosen in **device** pixels
+  (`floor(containerWidth × devicePixelRatio / 180)`), and the native width is
+  capped at the 240 px art width. This keeps pixels square and even on
+  fractional DPRs such as 2.625, and shows the whole room on desktop.
+- *(As built in M3)* Drawing uses a small software rasterizer (PIL-style
+  rect/line/ellipse/polygon on a `Uint32Array`) rather than canvas 2D paths,
+  which antialias. The static scene is pre-lit once; each frame only the
+  character's 60x80 box is redrawn (about 0.3 ms per frame on desktop).
 - **Room art:**
   - Authored at 240x160 native pixels, a portrait-friendly crop of the video
     apartment: window, table, kitchen corner and fridge.
@@ -372,10 +428,18 @@ DOM panels use P5-style tilted black and red slabs, built with CSS
 - Their character follows `audio.py`.
 - Off by default. Audio starts only after a user gesture.
 - No background music in v1.
+- *(As built in M6)* Cues are pure data per reward (`src/audio/cues.ts`),
+  timed against the fx timelines, and played by a small Web Audio synth:
+  square ticks (one per banner letter, on the video's Gmaj9 arpeggio), blips,
+  bells, detuned-saw brass stabs, noise whooshes, a sub "slam", and a glint.
+  Skipping fades the item's sound out. Reduce motion plays one soft chime.
 
 ---
 
 ## 10. Data model
+
+*(As built in M6)* `schemaVersion` is 2: `settings.hair` (`auto` | `down` |
+`ponytail`) was added, and v1 saves and exports migrate automatically.
 
 Stored in `localStorage` under the single key `workout-buddy`, as versioned
 JSON. Every read and write is wrapped in try/catch. If storage is unavailable,
@@ -481,16 +545,16 @@ tests/            Vitest specs for domain/ and storage/
 2. **Rules engine:** *(done)*
    - Streak, freezes, make-ups, stats, ranks, personal bests and achievements,
      with full Vitest coverage.
-3. **Pixel renderer:**
+3. **Pixel renderer:** *(done)*
    - Scaling, sprite pipeline, palette and font.
    - Port the character and build the 240x160 room.
    - Idle animation and expressions.
-4. **Rewards:** T1 toast, T2 banner and rank-up bar, the reward queue, reduce
+4. **Rewards:** *(done)* T1 toast, T2 banner and rank-up bar, the reward queue, reduce
    motion.
-5. **Counters and stats:**
+5. **Counters and stats:** *(done)*
    - Counters with cans and wrappers in the room.
    - The heatmap, personal-best board and achievements list.
-6. **Polish:**
+6. **Polish:** *(done)*
    - T3 perfect-week sequence.
    - Room and outfit unlocks.
    - Sound effects.

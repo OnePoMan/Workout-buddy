@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   addDays,
   dayLabel,
+  fullDate,
   diffDays,
   formatDuration,
   isValidDay,
@@ -61,7 +62,9 @@ describe('day arithmetic', () => {
 
 describe('formatting', () => {
   it('labels days', () => {
-    expect(dayLabel('2026-10-03')).toBe('SAT • OCT 3');
+    expect(dayLabel('2026-10-03')).toBe('SAT 10/3');
+    expect(dayLabel('2026-12-31')).toBe('THU 12/31');
+    expect(fullDate('2026-10-03')).toBe('10/3/2026');
   });
 
   it('formats durations', () => {

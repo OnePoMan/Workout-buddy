@@ -88,7 +88,10 @@ function parseSettings(v: unknown): Settings {
   const rm = v.reduceMotion;
   if (rm !== 'system' && rm !== 'on' && rm !== 'off') fail(`${p}.reduceMotion`, 'expected system|on|off');
 
-  return { seasonStart, seasonEnd, rolloverHour, targets, caps, sound: v.sound, reduceMotion: rm };
+  const hair = v.hair;
+  if (hair !== 'auto' && hair !== 'down' && hair !== 'ponytail') fail(`${p}.hair`, 'expected auto|down|ponytail');
+
+  return { seasonStart, seasonEnd, rolloverHour, targets, caps, sound: v.sound, reduceMotion: rm, hair };
 }
 
 function parseSession(v: unknown, i: number): SessionLog {
@@ -141,7 +144,7 @@ function parseCounter(v: unknown, i: number): CounterEntry {
   };
 }
 
-function parseV1(v: Obj): SaveFile {
+function parseCurrent(v: Obj): SaveFile {
   if (!Array.isArray(v.sessions)) fail('sessions', 'expected an array');
   if (!Array.isArray(v.counters)) fail('counters', 'expected an array');
   if (!Array.isArray(v.confirmedZeroDays) || !v.confirmedZeroDays.every(isValidDay)) {
@@ -167,11 +170,11 @@ function parseV1(v: Obj): SaveFile {
   };
 }
 
-/**
- * Upgrade steps, keyed by the version they upgrade *from*.
- * Add `1: (v) => ({ ...v, schemaVersion: 2, ... })` when schema 2 exists.
- */
-const STEPS: Record<number, (v: Obj) => Obj> = {};
+/** Upgrade steps, keyed by the version they upgrade *from*. */
+const STEPS: Record<number, (v: Obj) => Obj> = {
+  // v2 (M6): hair setting for the ponytail unlock.
+  1: (v) => ({ ...v, schemaVersion: 2, settings: isObj(v.settings) ? { ...v.settings, hair: 'auto' } : v.settings }),
+};
 
 /** Validates raw data of any known schema version and returns a current SaveFile. */
 export function migrate(raw: unknown): SaveFile {
@@ -192,5 +195,5 @@ export function migrate(raw: unknown): SaveFile {
     data = step(data);
     version += 1;
   }
-  return parseV1(data);
+  return parseCurrent(data);
 }

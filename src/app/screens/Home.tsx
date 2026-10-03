@@ -1,14 +1,20 @@
+import { useCallback, useMemo, useState } from 'react';
 import { changeCounter, toggleNothingToday } from '../actions';
-import { COUNTERS, counterTotal, dayHasEntries } from '../../domain/counters';
-import { dayLabel, weekdayLabel } from '../../domain/dates';
+import { COUNTERS, counterTotal, dayHasEntries, type CounterDef } from '../../domain/counters';
+import { dayLabel } from '../../domain/dates';
+import { characterMood } from '../../domain/mood';
+import { FREEZE_CAP } from '../../domain/rules';
 import { EXERCISE_LABEL, formatTarget, slotFor, type Slot } from '../../domain/schedule';
 import { completionFraction, findSession, isComplete, pendingMakeups, targetFor } from '../../domain/sessions';
 import type { LogicalDay } from '../../domain/types';
 import { ProgressBar } from '../components/ProgressBar';
 import { progressText } from '../format';
+import { CounterHistory } from '../components/CounterHistory';
+import { RoomView } from '../components/RoomView';
 import { useProgress } from '../hooks/useProgress';
+import { useReducedMotion } from '../hooks/useReducedMotion';
+import { outfitFor, roomExtras, useUnlocks } from '../hooks/useUnlocks';
 import { useSave, useStoreApi } from '../hooks/useStore';
-import { FREEZE_CAP } from '../../domain/rules';
 
 interface Props {
   today: LogicalDay;
@@ -18,6 +24,9 @@ interface Props {
 export function Home({ today, onLog }: Props) {
   const save = useSave();
   const { settings } = save;
+  const mood = useMemo(() => characterMood(save, today), [save, today]);
+  const reduceMotion = useReducedMotion(settings.reduceMotion);
+  const unlocks = useUnlocks();
 
   return (
     <div className="screen">
@@ -26,9 +35,16 @@ export function Home({ today, onLog }: Props) {
         <p className="slab-sub">{dayLabel(today)}</p>
       </header>
 
+      <RoomView
+        mood={mood}
+        extras={roomExtras(unlocks)}
+        outfit={outfitFor(unlocks, settings.hair)}
+        reduceMotion={reduceMotion}
+      />
+
       <TodayCard today={today} onLog={onLog} />
 
-      {today >= settings.seasonStart && <Streak today={today} />}
+      {today >= settings.seasonStart && <Streak />}
 
       {today >= settings.seasonStart && today <= settings.seasonEnd && (
         <Makeups today={today} onLog={onLog} />
@@ -63,7 +79,7 @@ function TodayCard({ today, onLog }: Props) {
   if (!slot) {
     return (
       <section className="card">
-        <p className="card-kicker">{weekdayLabel(today)}</p>
+        <p className="card-kicker">{dayLabel(today)}</p>
         <h2 className="card-title">REST DAY</h2>
       </section>
     );
@@ -75,7 +91,7 @@ function TodayCard({ today, onLog }: Props) {
 
   return (
     <section className={`card${done ? ' is-done' : ''}`}>
-      <p className="card-kicker">{weekdayLabel(today)} • TODAY</p>
+      <p className="card-kicker">{dayLabel(today)} • TODAY</p>
       <h2 className="card-title">{formatTarget(slot.exercise, target)}</h2>
       <ProgressBar fraction={completionFraction(session)} label={`${EXERCISE_LABEL[slot.exercise]} progress`} />
       <div className="card-row">
@@ -88,8 +104,8 @@ function TodayCard({ today, onLog }: Props) {
   );
 }
 
-function Streak({ today }: { today: LogicalDay }) {
-  const { today: snap } = useProgress(today);
+function Streak() {
+  const { today: snap } = useProgress();
   return (
     <section className="card streak" aria-label="Streak">
       <div className="streak-main">
@@ -125,7 +141,7 @@ function Makeups({ today, onLog }: Props) {
       {pending.map((slot) => (
         <button key={slot.day} type="button" className="chip" onClick={() => onLog(slot)}>
           <span className="chip-tag">MAKE-UP</span>
-          {weekdayLabel(slot.day)} {EXERCISE_LABEL[slot.exercise]}
+          {dayLabel(slot.day)} {EXERCISE_LABEL[slot.exercise]}
         </button>
       ))}
     </section>
@@ -137,6 +153,8 @@ function Counters({ today }: { today: LogicalDay }) {
   const { settings, counters, confirmedZeroDays } = useSave();
   const hasEntries = dayHasEntries(counters, today);
   const confirmedZero = confirmedZeroDays.includes(today);
+  const [historyFor, setHistoryFor] = useState<CounterDef | null>(null);
+  const closeHistory = useCallback(() => setHistoryFor(null), []);
 
   return (
     <section className="card" aria-label="Daily counters">
@@ -147,10 +165,17 @@ function Counters({ today }: { today: LogicalDay }) {
         const over = total > cap;
         return (
           <div key={c.id} className={`counter${over ? ' is-over' : ''}`}>
-            <span className="counter-label">{c.label}</span>
-            <span className="counter-value mono" aria-live="polite">
-              {total} / {cap}
-            </span>
+            <button
+              type="button"
+              className="counter-open"
+              aria-label={`${c.label}: ${total} of ${cap}. Show today's history`}
+              onClick={() => setHistoryFor(c)}
+            >
+              <span className="counter-label">{c.label}</span>
+              <span className="counter-value mono" aria-live="polite">
+                {total} / {cap}
+              </span>
+            </button>
             <button
               type="button"
               className="btn btn-square"
@@ -180,6 +205,8 @@ function Counters({ today }: { today: LogicalDay }) {
       >
         {confirmedZero && !hasEntries ? 'NOTHING TODAY ✓' : 'NOTHING TODAY'}
       </button>
+      <p className="hint">Tap or hold a counter for today's history and undo.</p>
+      {historyFor && <CounterHistory counter={historyFor} day={today} onClose={closeHistory} />}
     </section>
   );
 }

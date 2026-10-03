@@ -166,3 +166,21 @@ describe('export / import', () => {
     expect(() => parseImport('nope')).toThrow('That file is not valid JSON.');
   });
 });
+
+describe('migration v1 -> v2', () => {
+  it('adds the hair setting to v1 saves', () => {
+    const v1 = JSON.parse(JSON.stringify(sample()));
+    v1.schemaVersion = 1;
+    delete v1.settings.hair;
+    const m = migrate(v1);
+    expect(m.schemaVersion).toBe(2);
+    expect(m.settings.hair).toBe('auto');
+    expect(m.sessions).toEqual(sample().sessions);
+  });
+
+  it('rejects an unknown hair value', () => {
+    const bad = JSON.parse(JSON.stringify(sample()));
+    bad.settings.hair = 'mohawk';
+    expect(() => migrate(bad)).toThrow(/settings\.hair/);
+  });
+});

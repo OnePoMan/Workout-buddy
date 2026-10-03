@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { replaceAll, resetAll, updateSettings } from '../actions';
 import { CAP_MAX, CAP_MIN, COUNTERS } from '../../domain/counters';
-import { dayLabel, isValidDay } from '../../domain/dates';
+import { fullDate, isValidDay, weekdayLabel } from '../../domain/dates';
 import { EXERCISE_LABEL } from '../../domain/schedule';
 import { TARGET_LIMITS, isValidCap, isValidTarget } from '../../domain/settings';
 import { EXERCISES, type LogicalDay, type ReduceMotion } from '../../domain/types';
@@ -146,7 +146,9 @@ export function Settings({ today }: { today: LogicalDay }) {
             }}
           />
         </label>
-        <p className="hint">Ends {dayLabel(settings.seasonEnd)}, 2026.</p>
+        <p className="hint">
+          Ends {weekdayLabel(settings.seasonEnd)} {fullDate(settings.seasonEnd)}.
+        </p>
         <label className="field">
           <span>DAY ENDS AT</span>
           <select

@@ -60,6 +60,9 @@ expected to change after playtesting.
   - Starts on the first launch date. Settings can change the start date.
   - Ends on 2026-12-31.
   - Weeks before the start date are excluded from every calculation.
+- **Dates:** every day is shown with its calendar date as `SAT 10/3`
+  (weekday, month/day), including the Today card, make-up chips, the log
+  sheet, the heatmap and history.
 - **Day rollover:** happens at 03:00 local time by default. Settings can change
   the hour. For example, a can logged at 01:00 counts toward the previous day.
   All dates are stored as local `YYYY-MM-DD` "logical days" after this offset
@@ -321,7 +324,7 @@ The layout is phone-first and portrait. Navigation is a bottom tab bar:
 ### 8.1 Home
 - **Top:** the room scene in a canvas, showing the character and unlocks.
 - **Below the room:**
-  - Today's card, for example "THU • 30 PUSH-UPS" with a progress bar and a
+  - Today's card, for example "THU 10/8 • TODAY / 30 PUSH-UPS" with a progress bar and a
     "LOG" button. On Sunday it reads "REST DAY".
   - Make-up chips, if any.
   - The streak counter, plus the number of banked freezes.

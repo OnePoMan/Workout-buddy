@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { changeCounter, toggleNothingToday } from '../actions';
 import { COUNTERS, counterTotal, dayHasEntries, type CounterDef } from '../../domain/counters';
-import { dayLabel, weekdayLabel } from '../../domain/dates';
+import { dayLabel } from '../../domain/dates';
 import { characterMood } from '../../domain/mood';
 import { FREEZE_CAP } from '../../domain/rules';
 import { EXERCISE_LABEL, formatTarget, slotFor, type Slot } from '../../domain/schedule';
@@ -72,7 +72,7 @@ function TodayCard({ today, onLog }: Props) {
   if (!slot) {
     return (
       <section className="card">
-        <p className="card-kicker">{weekdayLabel(today)}</p>
+        <p className="card-kicker">{dayLabel(today)}</p>
         <h2 className="card-title">REST DAY</h2>
       </section>
     );
@@ -84,7 +84,7 @@ function TodayCard({ today, onLog }: Props) {
 
   return (
     <section className={`card${done ? ' is-done' : ''}`}>
-      <p className="card-kicker">{weekdayLabel(today)} • TODAY</p>
+      <p className="card-kicker">{dayLabel(today)} • TODAY</p>
       <h2 className="card-title">{formatTarget(slot.exercise, target)}</h2>
       <ProgressBar fraction={completionFraction(session)} label={`${EXERCISE_LABEL[slot.exercise]} progress`} />
       <div className="card-row">
@@ -134,7 +134,7 @@ function Makeups({ today, onLog }: Props) {
       {pending.map((slot) => (
         <button key={slot.day} type="button" className="chip" onClick={() => onLog(slot)}>
           <span className="chip-tag">MAKE-UP</span>
-          {weekdayLabel(slot.day)} {EXERCISE_LABEL[slot.exercise]}
+          {dayLabel(slot.day)} {EXERCISE_LABEL[slot.exercise]}
         </button>
       ))}
     </section>

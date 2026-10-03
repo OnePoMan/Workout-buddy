@@ -627,3 +627,19 @@ p {
 .pb-prev {
   color: var(--muted);
 }
+
+/* ----------------------------------------------------------------- room */
+.room {
+  display: flex;
+  justify-content: center;
+  background: var(--black);
+  border: 2px solid var(--panel-edge);
+  /* The canvas sets its own exact size; avoid a flash of zero height. */
+  min-height: 120px;
+}
+
+.room-canvas {
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}

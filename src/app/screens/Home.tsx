@@ -1,14 +1,18 @@
+import { useMemo } from 'react';
 import { changeCounter, toggleNothingToday } from '../actions';
 import { COUNTERS, counterTotal, dayHasEntries } from '../../domain/counters';
 import { dayLabel, weekdayLabel } from '../../domain/dates';
+import { characterMood } from '../../domain/mood';
+import { FREEZE_CAP } from '../../domain/rules';
 import { EXERCISE_LABEL, formatTarget, slotFor, type Slot } from '../../domain/schedule';
 import { completionFraction, findSession, isComplete, pendingMakeups, targetFor } from '../../domain/sessions';
 import type { LogicalDay } from '../../domain/types';
 import { ProgressBar } from '../components/ProgressBar';
 import { progressText } from '../format';
+import { RoomView } from '../components/RoomView';
 import { useProgress } from '../hooks/useProgress';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import { useSave, useStoreApi } from '../hooks/useStore';
-import { FREEZE_CAP } from '../../domain/rules';
 
 interface Props {
   today: LogicalDay;
@@ -18,6 +22,8 @@ interface Props {
 export function Home({ today, onLog }: Props) {
   const save = useSave();
   const { settings } = save;
+  const mood = useMemo(() => characterMood(save, today), [save, today]);
+  const reduceMotion = useReducedMotion(settings.reduceMotion);
 
   return (
     <div className="screen">
@@ -25,6 +31,8 @@ export function Home({ today, onLog }: Props) {
         <h1>WORKOUT BUDDY</h1>
         <p className="slab-sub">{dayLabel(today)}</p>
       </header>
+
+      <RoomView mood={mood} reduceMotion={reduceMotion} />
 
       <TodayCard today={today} onLog={onLog} />
 

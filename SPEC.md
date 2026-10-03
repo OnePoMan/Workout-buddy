@@ -238,6 +238,13 @@ achievement stores the date it was earned and a `seen` flag.
 | side-eye | A counter is over its cap |
 | relax (on the couch or at the table) | Sunday |
 | look | Pending make-ups exist |
+| sideeye | (new expression) heavy lids, eyes on the camera, one-sided mouth |
+
+- Face priority: over a cap > completed a session today > make-ups pending >
+  rest day (smile) > idle. Pose is seated on Sunday and outside the season.
+- Idle animation runs at 12 fps: blink every 4.2 s (double blink every third
+  cycle), breathing, a small hop when happy, and the window's neon sign
+  flickering.
 
 ### 6.2 Unlocks (*tunable* mapping)
 
@@ -337,6 +344,14 @@ The layout is phone-first and portrait. Navigation is a bottom tab bar:
   - A 390 px wide phone gets `S=2`, a 195 px native width.
 - Canvases are drawn at native size, then scaled up by CSS with
   `image-rendering: pixelated`.
+- *(As built in M3)* `S` is chosen in **device** pixels
+  (`floor(containerWidth × devicePixelRatio / 180)`), and the native width is
+  capped at the 240 px art width. This keeps pixels square and even on
+  fractional DPRs such as 2.625, and shows the whole room on desktop.
+- *(As built in M3)* Drawing uses a small software rasterizer (PIL-style
+  rect/line/ellipse/polygon on a `Uint32Array`) rather than canvas 2D paths,
+  which antialias. The static scene is pre-lit once; each frame only the
+  character's 60x80 box is redrawn (about 0.3 ms per frame on desktop).
 - **Room art:**
   - Authored at 240x160 native pixels, a portrait-friendly crop of the video
     apartment: window, table, kitchen corner and fridge.
@@ -481,7 +496,7 @@ tests/            Vitest specs for domain/ and storage/
 2. **Rules engine:** *(done)*
    - Streak, freezes, make-ups, stats, ranks, personal bests and achievements,
      with full Vitest coverage.
-3. **Pixel renderer:**
+3. **Pixel renderer:** *(done)*
    - Scaling, sprite pipeline, palette and font.
    - Port the character and build the 240x160 room.
    - Idle animation and expressions.

@@ -50,8 +50,8 @@ describe('weekly eating-out counter', () => {
     expect(dayHasEntries(counter(MON, EAT), MON)).toBe(false);
     const withMeal = snapshot(save(MON, [], counter(MON, EAT, 3)), '2026-10-06');
     expect(withMeal.disciplineDays).toEqual([]);
-    const withSnack = snapshot(save(MON, [], [...counter(MON, 'snacks'), ...counter(MON, EAT, 3)]), '2026-10-06');
-    expect(withSnack.disciplineDays).toEqual([MON]);
+    const withCan = snapshot(save(MON, [], [...counter(MON, 'dr_pepper'), ...counter(MON, EAT, 3)]), '2026-10-06');
+    expect(withCan.disciplineDays).toEqual([MON]);
   });
 });
 

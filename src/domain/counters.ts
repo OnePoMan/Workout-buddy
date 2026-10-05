@@ -11,7 +11,6 @@ export interface CounterDef {
 /** Daily soft caps: totals reset at each day's rollover. */
 export const COUNTERS: readonly CounterDef[] = [
   { id: 'dr_pepper', label: 'DIET DR PEPPER', unit: 'can', defaultCap: 2 },
-  { id: 'snacks', label: 'SNACKS', unit: 'item', defaultCap: 3 },
 ];
 
 export const EATING_OUT: CounterDef = { id: 'eating_out', label: 'EATING OUT', unit: 'meal', defaultCap: 1 };
@@ -21,6 +20,11 @@ export const WEEKLY_COUNTERS: readonly CounterDef[] = [EATING_OUT];
 
 export function isWeeklyCounter(counterId: string): boolean {
   return WEEKLY_COUNTERS.some((c) => c.id === counterId);
+}
+
+/** Daily counters in use. Entries for retired counters (e.g. old snack logs) are ignored. */
+export function isDailyCounter(counterId: string): boolean {
+  return COUNTERS.some((c) => c.id === counterId);
 }
 
 export const CAP_MIN = 0;
@@ -50,7 +54,7 @@ export function periodTotal(entries: readonly CounterEntry[], counterId: string,
 
 /** Whether any daily counter has entries on `day` (weekly counters don't count toward "Nothing today"). */
 export function dayHasEntries(entries: readonly CounterEntry[], day: LogicalDay): boolean {
-  return entries.some((e) => e.day === day && !isWeeklyCounter(e.counterId));
+  return entries.some((e) => e.day === day && isDailyCounter(e.counterId));
 }
 
 /** Appends a +1/-1 entry. A -1 at zero is a no-op so totals never go negative. */

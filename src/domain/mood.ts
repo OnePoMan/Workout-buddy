@@ -11,7 +11,6 @@ export interface Mood {
   face: Face;
   /** Today's counter totals, shown as props in the room. */
   cans: number;
-  wrappers: number;
   /** This week's eating out, shown as fries on the windowsill. */
   fries: number;
 }
@@ -41,16 +40,12 @@ export function characterMood(save: SaveFile, today: LogicalDay): Mood {
     pose: rest ? 'sit' : 'stand',
     face,
     cans: counterTotal(counters, 'dr_pepper', today),
-    wrappers: counterTotal(counters, 'snacks', today),
     fries,
   };
 }
 
 export function describeMood(mood: Mood): string {
-  const props = [
-    mood.cans ? `${mood.cans} can${mood.cans === 1 ? '' : 's'} of Diet Dr Pepper on the counter` : '',
-    mood.wrappers ? `${mood.wrappers} snack wrapper${mood.wrappers === 1 ? '' : 's'} on the table` : '',
-  ].filter(Boolean);
+  const today = mood.cans ? ` Today: ${mood.cans} can${mood.cans === 1 ? '' : 's'} of Diet Dr Pepper on the counter.` : '';
   const week = mood.fries ? ` This week: ${mood.fries} order${mood.fries === 1 ? '' : 's'} of fries on the windowsill.` : '';
   const where = mood.pose === 'sit' ? 'relaxing at the table' : 'standing in the apartment';
   const faces: Record<Face, string> = {
@@ -61,5 +56,5 @@ export function describeMood(mood: Mood): string {
     smile: 'smiling',
   };
   const scene = `Your character is ${where}, ${faces[mood.face]}.`;
-  return (props.length ? `${scene} Today: ${props.join(' and ')}.` : scene) + week;
+  return scene + today + week;
 }

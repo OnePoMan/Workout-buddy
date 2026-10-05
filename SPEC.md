@@ -22,7 +22,7 @@ expected to change after playtesting.
 - Five stats with Persona-style ranks.
 - Achievements and tiered reward animations.
 - Room and outfit unlocks.
-- Soft-cap counters for Diet Dr Pepper and snacks, and a weekly eating-out limit.
+- A daily soft-cap counter for Diet Dr Pepper and a weekly eating-out limit.
 - A weekly consistency heatmap and a personal-best board.
 - A season that ends 2026-12-31, with a finale.
 - Installable from the browser (PWA), works offline, and stores data only on the device.
@@ -149,7 +149,7 @@ This module is the main target for unit tests.
 | BACK | pull-up sessions | 10 x fraction (floored) |
 | LEGS | squat session | 20 x fraction (floored) |
 | STAMINA | run session | 20 x fraction (floored) |
-| DISCIPLINE | each day both counters stay at or under their caps | 3 |
+| DISCIPLINE | each day the daily counter stays at or under its cap | 3 |
 
 - Squats and the run happen once a week, so each counts double. That gives all
   four exercise stats the same weekly maximum (20).
@@ -295,12 +295,9 @@ achievement stores the date it was earned and a `seen` flag.
 
 ### 6.3 Counter props
 - Each Diet Dr Pepper logged that day shows as a pixel can on the kitchen
-  counter.
-- Each snack shows as a wrapper.
-- Both reset at rollover.
-- *(As built in M5)* Cans stand in a 4-3-2-1 pyramid on the counter and
-  wrappers lie on the tablecloth (chips, candy and granola colours in turn).
-  Up to 10 of each are drawn; the counter shows the true total.
+  counter. The cans reset at rollover.
+- *(As built in M5)* Cans stand in a 4-3-2-1 pyramid on the counter. Up to 10
+  are drawn; the counter shows the true total.
 - Each eating-out meal logged this week shows as a McDonald's-style fries
   carton (red box, small golden M) on the windowsill, right of the cactus.
   The fries stay all week and clear at Monday's rollover. Up to 6 are drawn
@@ -313,7 +310,6 @@ achievement stores the date it was earned and a `seen` flag.
 | Counter | Unit | Default cap |
 |---|---|---|
 | Diet Dr Pepper | can | 2 |
-| Snacks | item | 3 |
 
 - Home has +/− buttons for each counter. A long press opens a small history of
   that day's entries. Each entry stores a timestamp, so undo works.
@@ -325,10 +321,13 @@ achievement stores the date it was earned and a `seen` flag.
   - The counter turns red and the character side-eyes.
   - There is no other effect. Streaks, points and unlocks are never affected.
   - The only consequence is losing that day's DISCIPLINE points.
-- A "Nothing today" button records an explicit zero for both counters
+- A "Nothing today" button records an explicit zero for the daily counter
   (see 4.3).
-- The data model supports any number of counters. The v1 UI shows these two
-  daily counters plus the weekly one in 7.1.
+- The data model supports any number of counters. The v1 UI shows this daily
+  counter plus the weekly one in 7.1.
+- *(Removed after M6)* A Snacks counter (default cap 3, wrappers on the table)
+  was dropped. Snack entries already in a save are kept but ignored: they are
+  not shown, drawn or scored.
 
 ### 7.1 Weekly eating-out limit
 
@@ -368,7 +367,8 @@ The layout is phone-first and portrait. Navigation is a bottom tab bar:
     "LOG" button. On Sunday it reads "REST DAY".
   - Make-up chips, if any.
   - The streak counter, plus the number of banked freezes.
-  - The two counters, with "Nothing today".
+  - The Diet Dr Pepper counter, with "Nothing today", and the weekly
+    eating-out card (7.1).
 
 ### 8.2 Log sheet
 - **Strength:**
@@ -515,7 +515,7 @@ interface SessionLog {
 
 interface CounterEntry {
   id: string;
-  counterId: "dr_pepper" | "snacks" | "eating_out" | string;
+  counterId: "dr_pepper" | "eating_out" | string;
   day: LogicalDay;
   at: string;                        // ISO timestamp
   delta: 1 | -1;
@@ -583,7 +583,8 @@ tests/            Vitest specs for domain/ and storage/
 4. **Rewards:** *(done)* T1 toast, T2 banner and rank-up bar, the reward queue, reduce
    motion.
 5. **Counters and stats:** *(done)*
-   - Counters with cans and wrappers in the room.
+   - Counters with cans and wrappers in the room (wrappers later removed with
+     the Snacks counter).
    - The heatmap, personal-best board and achievements list.
 6. **Polish:** *(done)*
    - T3 perfect-week sequence.

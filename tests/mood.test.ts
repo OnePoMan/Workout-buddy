@@ -4,7 +4,7 @@ import { MON, counter, log, save } from './helpers';
 
 describe('characterMood', () => {
   it('idles on a workout day with nothing done', () => {
-    expect(characterMood(save(MON), MON)).toEqual({ pose: 'stand', face: 'normal', cans: 0, wrappers: 0, fries: 0 });
+    expect(characterMood(save(MON), MON)).toEqual({ pose: 'stand', face: 'normal', cans: 0, fries: 0 });
   });
 
   it('is happy after completing a session today, including a make-up', () => {
@@ -37,7 +37,7 @@ describe('characterMood', () => {
     expect(characterMood(sv, '2026-10-08').fries).toBe(2);
     expect(characterMood(sv, '2026-10-11').fries).toBe(2);
     expect(characterMood(sv, '2026-10-12').fries).toBe(0);
-    expect(describeMood({ pose: 'stand', face: 'normal', cans: 0, wrappers: 0, fries: 2 })).toBe(
+    expect(describeMood({ pose: 'stand', face: 'normal', cans: 0, fries: 2 })).toBe(
       'Your character is standing in the apartment, ready to go. This week: 2 orders of fries on the windowsill.',
     );
   });
@@ -49,17 +49,17 @@ describe('characterMood', () => {
   });
 
   it('describes itself for screen readers', () => {
-    expect(describeMood({ pose: 'sit', face: 'smile', cans: 0, wrappers: 0, fries: 0 })).toBe(
+    expect(describeMood({ pose: 'sit', face: 'smile', cans: 0, fries: 0 })).toBe(
       'Your character is relaxing at the table, smiling.',
     );
-    expect(describeMood({ pose: 'stand', face: 'sideeye', cans: 3, wrappers: 1, fries: 0 })).toBe(
+    expect(describeMood({ pose: 'stand', face: 'sideeye', cans: 3, fries: 0 })).toBe(
       'Your character is standing in the apartment, giving you a side-eye about the counters. ' +
-        'Today: 3 cans of Diet Dr Pepper on the counter and 1 snack wrapper on the table.',
+        'Today: 3 cans of Diet Dr Pepper on the counter.',
     );
   });
 
-  it('counts today\'s cans and wrappers for the room', () => {
+  it('counts today\'s cans for the room and ignores retired snack logs', () => {
     const sv = save(MON, [], [...counter(MON, 'dr_pepper', 2), ...counter(MON, 'snacks', 3), ...counter('2026-10-06')]);
-    expect(characterMood(sv, MON)).toMatchObject({ cans: 2, wrappers: 3 });
+    expect(characterMood(sv, MON)).toEqual({ pose: 'stand', face: 'normal', cans: 2, fries: 0 });
   });
 });

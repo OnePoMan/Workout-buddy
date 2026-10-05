@@ -143,7 +143,7 @@ describe('event-day shortcut', () => {
       ...week(W3, [1, 3]),
       log(addDays(W3, 5), { durationSec: 560 }),
     ];
-    const counters = Array.from({ length: 20 }, (_, i) => counter(addDays(MON, i), 'snacks', i % 5)).flat();
+    const counters = Array.from({ length: 20 }, (_, i) => counter(addDays(MON, i), 'dr_pepper', i % 5)).flat();
     const sv = { ...save(MON, sessions, counters), confirmedZeroDays: [addDays(MON, 21), addDays(MON, 22)] };
     for (const today of [addDays(MON, 3), W2, addDays(W3, 6), addDays(MON, 30)]) {
       expect(computeProgress(sv, today).earned).toEqual(computeProgress(sv, today, { everyDay: true }).earned);

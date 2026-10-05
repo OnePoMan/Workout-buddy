@@ -47,7 +47,7 @@ describe('emptySave', () => {
     expect(s.settings.seasonEnd).toBe('2026-12-31');
     expect(s.settings.rolloverHour).toBe(3);
     expect(s.settings.targets).toEqual({ pushups: 30, pullups: 30, squats: 60, run: 1 });
-    expect(s.settings.caps).toEqual({ dr_pepper: 2, snacks: 3, eating_out: 1 });
+    expect(s.settings.caps).toEqual({ dr_pepper: 2, eating_out: 1 });
     expect(s.settings.sound).toBe(false);
   });
 });

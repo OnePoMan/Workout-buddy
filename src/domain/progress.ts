@@ -1,4 +1,4 @@
-import { COUNTERS, EATING_OUT, isWeeklyCounter } from './counters';
+import { COUNTERS, EATING_OUT, isDailyCounter } from './counters';
 import { addDays, weekStart } from './dates';
 import {
   DISCIPLINE_POINTS,
@@ -238,8 +238,8 @@ function discipline(save: SaveFile, asOf: LogicalDay) {
   // day -> counterId -> running sum, built once instead of rescanning entries per day.
   const sums = new Map<LogicalDay, Map<string, number>>();
   for (const e of counters) {
-    // Weekly counters are judged per week (eatIn), not per day.
-    if (isWeeklyCounter(e.counterId)) continue;
+    // Only daily counters count; weekly ones are judged per week (eatIn).
+    if (!isDailyCounter(e.counterId)) continue;
     const day = sums.get(e.day) ?? new Map<string, number>();
     day.set(e.counterId, (day.get(e.counterId) ?? 0) + e.delta);
     sums.set(e.day, day);

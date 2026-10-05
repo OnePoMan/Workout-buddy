@@ -95,8 +95,8 @@ const DAILY_RULES: DailyRule[] = [
     def: def({
       id: 'cap_7',
       name: 'IRON WILL',
-      description: `Stay under both caps for ${CAP_RUN_DAYS} days in a row.`,
-      tagline: `${CAP_RUN_DAYS} DAYS UNDER THE CAPS`,
+      description: `Stay at or under the Diet Dr Pepper cap for ${CAP_RUN_DAYS} days in a row.`,
+      tagline: `${CAP_RUN_DAYS} DAYS UNDER THE CAP`,
       tier: 2,
     }),
     test: (s) => s.longestDisciplineRun >= CAP_RUN_DAYS,

@@ -14,7 +14,7 @@ describe('counters', () => {
   it('sums entries per counter and day', () => {
     const list = [entry('2026-10-03', 1), entry('2026-10-03', 1), entry('2026-10-03', -1), entry('2026-10-04', 1)];
     expect(counterTotal(list, 'dr_pepper', '2026-10-03')).toBe(1);
-    expect(counterTotal(list, 'snacks', '2026-10-03')).toBe(0);
+    expect(counterTotal(list, 'eating_out', '2026-10-03')).toBe(0);
     expect(dayHasEntries(list, '2026-10-04')).toBe(true);
     expect(dayHasEntries(list, '2026-10-05')).toBe(false);
   });

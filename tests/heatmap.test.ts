@@ -62,7 +62,7 @@ describe('buildHeatmap', () => {
 });
 
 describe('counter history', () => {
-  const e = (id: string, at: string, delta: 1 | -1, counterId = 'snacks'): CounterEntry => ({
+  const e = (id: string, at: string, delta: 1 | -1, counterId = 'eating_out'): CounterEntry => ({
     id,
     counterId,
     day: MON,
@@ -72,9 +72,9 @@ describe('counter history', () => {
 
   it('lists one counter oldest first and undoes by id', () => {
     const entries = [e('b', `${MON}T15:00:00Z`, 1), e('a', `${MON}T09:00:00Z`, 1), e('c', `${MON}T10:00:00Z`, 1, 'dr_pepper')];
-    expect(counterEntries(entries, 'snacks', MON).map((x) => x.id)).toEqual(['a', 'b']);
+    expect(counterEntries(entries, 'eating_out', MON).map((x) => x.id)).toEqual(['a', 'b']);
     const after = removeCounterEntry(entries, 'b');
-    expect(counterTotal(after, 'snacks', MON)).toBe(1);
+    expect(counterTotal(after, 'eating_out', MON)).toBe(1);
     expect(after).toHaveLength(2);
   });
 });

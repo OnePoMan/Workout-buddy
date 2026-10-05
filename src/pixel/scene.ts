@@ -19,8 +19,8 @@ import {
   ROOM_W,
   SIT_X,
   STAND_X,
-  TABLE_LAYER_Y,
   TABLE_X,
+  TABLE_Y,
   roomLayers,
   type RoomExtras,
   type RoomProps,
@@ -32,7 +32,7 @@ export type SceneFace = 'normal' | 'happy' | 'sideeye' | 'look' | 'smile';
 export interface SceneState {
   pose: ScenePose;
   face: SceneFace;
-  /** Today's Diet Dr Pepper cans and snack wrappers, and this week's fries. */
+  /** Today's Diet Dr Pepper cans and this week's fries. */
   props?: RoomProps;
   /** Unlocked room items. */
   extras?: RoomExtras;
@@ -122,7 +122,7 @@ export function renderScene(state: SceneState, t: number, out = new PixelBuffer(
   const box = scratch(x1 - x0, y1 - y0);
   box.copyRegion(layers.base, x0, y0);
   box.blit(renderCharacter(pose), cx - x0, cy - y0);
-  box.blit(layers.table, TABLE_X - x0, TABLE_LAYER_Y - y0);
+  box.blit(layers.table, TABLE_X - x0, TABLE_Y - y0);
   box.blit(layers.glow, -x0, -y0);
   out.place(box, x0, y0);
   return out;

@@ -22,7 +22,7 @@ export function RoomView({ mood, extras, outfit, reduceMotion }: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [scale, setScale] = useState<PixelScale | null>(null);
-  const { pose, face, cans, wrappers, fries } = mood;
+  const { pose, face, cans, fries } = mood;
   // Stable keys so the render loop restarts only when what is drawn changes.
   const extrasKey = JSON.stringify(extras);
   const outfitKey = JSON.stringify(outfit);
@@ -56,7 +56,7 @@ export function RoomView({ mood, extras, outfit, reduceMotion }: Props) {
     const state = {
       pose,
       face,
-      props: { cans, wrappers, fries },
+      props: { cans, fries },
       extras: JSON.parse(extrasKey) as RoomExtras,
       outfit: JSON.parse(outfitKey) as Omit<Outfit, 'sway'>,
     };
@@ -94,7 +94,7 @@ export function RoomView({ mood, extras, outfit, reduceMotion }: Props) {
       cancelAnimationFrame(raf);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [scale, pose, face, cans, wrappers, fries, extrasKey, outfitKey, reduceMotion]);
+  }, [scale, pose, face, cans, fries, extrasKey, outfitKey, reduceMotion]);
 
   return (
     <div ref={wrapRef} className="room">

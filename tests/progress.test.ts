@@ -143,7 +143,7 @@ describe('stats', () => {
       ...counter(MON), // 1/2 → qualifies
       ...counter('2026-10-06', 'dr_pepper', 3), // over cap
       // 10-07: no data
-      ...counter('2026-10-08', 'snacks', 3), // at cap → qualifies
+      ...counter('2026-10-08', 'dr_pepper', 2), // at cap → qualifies
       ...counter('2026-10-09'), // today → not decided yet
     ];
     const sv = { ...save(MON, [], counters), confirmedZeroDays: ['2026-10-07'] };
@@ -152,6 +152,13 @@ describe('stats', () => {
     expect(s.stats.discipline.points).toBe(9);
     expect(s.disciplineRun).toBe(2);
     expect(s.longestDisciplineRun).toBe(2);
+  });
+
+  it('ignores logs for the retired snacks counter', () => {
+    const counters = [...counter(MON, 'snacks', 9), ...counter('2026-10-06'), ...counter('2026-10-06', 'snacks', 9)];
+    const s = snapshot(save(MON, [], counters), '2026-10-07');
+    // MON had only snack logs: no data. 10-06 is scored on Diet Dr Pepper alone.
+    expect(s.disciplineDays).toEqual(['2026-10-06']);
   });
 
   it('maps points to ranks', () => {

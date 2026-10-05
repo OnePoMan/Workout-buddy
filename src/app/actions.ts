@@ -1,5 +1,5 @@
 import { markSeen, type Earned } from '../domain/achievements';
-import { applyCounterDelta, counterTotal, removeCounterEntry } from '../domain/counters';
+import { applyCounterDelta, periodTotal, removeCounterEntry } from '../domain/counters';
 import { newId } from '../domain/ids';
 import { removeSession, upsertSession } from '../domain/sessions';
 import type { LogicalDay, SaveFile, SessionLog, Settings } from '../domain/types';
@@ -16,7 +16,7 @@ export function deleteSession(store: Store, slotDay: LogicalDay): void {
 
 export function changeCounter(store: Store, counterId: string, day: LogicalDay, delta: 1 | -1): void {
   store.update((s) => {
-    if (delta < 0 && counterTotal(s.counters, counterId, day) === 0) return s;
+    if (delta < 0 && periodTotal(s.counters, counterId, day) === 0) return s;
     const entry = { id: newId(), counterId, day, at: new Date().toISOString(), delta };
     return { ...s, counters: applyCounterDelta(s.counters, entry) };
   });

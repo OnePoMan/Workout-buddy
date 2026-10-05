@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { replaceAll, resetAll, updateSettings } from '../actions';
-import { CAP_MAX, CAP_MIN, COUNTERS } from '../../domain/counters';
+import { CAP_MAX, CAP_MIN, COUNTERS, WEEKLY_COUNTERS } from '../../domain/counters';
 import { fullDate, isValidDay, weekdayLabel } from '../../domain/dates';
 import { EXERCISE_LABEL } from '../../domain/schedule';
 import { SEASON_EARLIEST_START, TARGET_LIMITS, isValidCap, isValidTarget } from '../../domain/settings';
@@ -127,6 +127,23 @@ export function Settings({ today }: { today: LogicalDay }) {
           <NumberField
             key={c.id}
             label={c.label}
+            value={settings.caps[c.id] ?? c.defaultCap}
+            step={1}
+            min={CAP_MIN}
+            max={CAP_MAX}
+            isValid={isValidCap}
+            onCommit={(n) => updateSettings(store, { caps: { ...settings.caps, [c.id]: n } })}
+          />
+        ))}
+      </section>
+
+      <section className="card">
+        <h2 className="card-kicker">WEEKLY LIMITS</h2>
+        <p className="hint">Counted Monday–Sunday.</p>
+        {WEEKLY_COUNTERS.map((c) => (
+          <NumberField
+            key={c.id}
+            label={`${c.label} (PER WEEK)`}
             value={settings.caps[c.id] ?? c.defaultCap}
             step={1}
             min={CAP_MIN}

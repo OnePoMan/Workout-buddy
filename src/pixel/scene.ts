@@ -32,7 +32,7 @@ export type SceneFace = 'normal' | 'happy' | 'sideeye' | 'look' | 'smile';
 export interface SceneState {
   pose: ScenePose;
   face: SceneFace;
-  /** Today's Diet Dr Pepper cans and snack wrappers. */
+  /** Today's Diet Dr Pepper cans and snack wrappers, and this week's fries. */
   props?: RoomProps;
   /** Unlocked room items. */
   extras?: RoomExtras;

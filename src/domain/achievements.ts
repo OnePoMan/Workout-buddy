@@ -1,6 +1,15 @@
-import { addDays, formatDuration } from './dates';
+import { addDays, formatDuration, weekStart } from './dates';
 import { snapshot, type PbEvent, type Snapshot } from './progress';
-import { CAP_RUN_DAYS, MAX_RANK, MILE_IMPROVE_SEC, STATS, STAT_LABEL, STREAK_MILESTONES, type Stat } from './rules';
+import {
+  CAP_RUN_DAYS,
+  EAT_IN_MILESTONES,
+  MAX_RANK,
+  MILE_IMPROVE_SEC,
+  STATS,
+  STAT_LABEL,
+  STREAK_MILESTONES,
+  type Stat,
+} from './rules';
 import { EXERCISE_LABEL } from './schedule';
 import { EXERCISES, type Exercise, type LogicalDay, type SaveFile } from './types';
 
@@ -27,6 +36,7 @@ export interface Earned {
 }
 
 const STREAK_NAMES: Record<number, string> = { 6: 'ON A ROLL', 12: 'HOT STREAK', 24: 'UNSTOPPABLE', 48: 'LEGENDARY' };
+const EAT_IN_NAMES: Record<number, string> = { 4: 'HOME COOKING', 8: 'MEAL PREPPER', 12: 'MASTER CHEF' };
 
 const def = (d: Omit<AchievementDef, 'repeatable' | 'kind' | 'tagline'> & Partial<AchievementDef>): AchievementDef => ({
   tagline: d.name,
@@ -91,6 +101,16 @@ const DAILY_RULES: DailyRule[] = [
     }),
     test: (s) => s.longestDisciplineRun >= CAP_RUN_DAYS,
   },
+  ...EAT_IN_MILESTONES.map((n) => ({
+    def: def({
+      id: `eat_in_${n}`,
+      name: EAT_IN_NAMES[n] ?? `EAT IN ${n}`,
+      description: `Stay at or under your eating-out limit for ${n} weeks in a row.`,
+      tagline: `${n} WEEKS UNDER THE LIMIT`,
+      tier: 2 as Tier,
+    }),
+    test: (s: Snapshot) => s.longestEatInRun >= n,
+  })),
   {
     def: def({
       id: 'mile_improve_30',
@@ -126,6 +146,15 @@ export const PERFECT_WEEK = def({
   description: 'Complete all 6 sessions in a Monday–Sunday week.',
   tagline: 'ALL 6 SESSIONS DONE',
   tier: 3,
+  repeatable: true,
+});
+
+export const EAT_IN_WEEK = def({
+  id: 'eat_in_week',
+  name: 'HOLD THE FRIES',
+  description: 'Stay at or under your eating-out limit for a Monday–Sunday week.',
+  tagline: 'UNDER THE WEEKLY LIMIT',
+  tier: 2,
   repeatable: true,
 });
 
@@ -168,6 +197,7 @@ export function recordDef(ev: PbEvent): AchievementDef {
 export const LOCKABLE: readonly AchievementDef[] = [
   ...DAILY_RULES.map((r) => r.def).filter((d) => d.kind === 'achievement'),
   PERFECT_WEEK,
+  EAT_IN_WEEK,
   SEASON_COMPLETE,
 ];
 
@@ -177,15 +207,17 @@ export interface Progress {
 }
 
 /**
- * Days on which a daily rule can change: a session was logged, or a day with
- * counter data (or "Nothing today") was scored at rollover. Every daily rule
- * depends only on those inputs, so other days can be skipped.
+ * Days on which a daily rule can change: a session was logged, a day with
+ * counter data (or "Nothing today") was scored at rollover, or a week was
+ * judged against the eating-out limit. Every daily rule depends only on those
+ * inputs, so other days can be skipped.
  */
 function eventDays(save: SaveFile, today: LogicalDay): Set<LogicalDay> {
   const days = new Set<LogicalDay>([today]);
   for (const s of save.sessions) days.add(s.loggedOn);
   for (const e of save.counters) days.add(addDays(e.day, 1));
   for (const d of save.confirmedZeroDays) days.add(addDays(d, 1));
+  for (let w = weekStart(save.settings.seasonStart); w <= today; w = addDays(w, 7)) days.add(addDays(w, 7));
   return days;
 }
 
@@ -220,6 +252,16 @@ export function computeProgress(save: SaveFile, today: LogicalDay, opts: { every
       count: perfectDays.length,
       firstOn: perfectDays[0]!,
       lastOn: perfectDays.at(-1)!,
+    });
+  }
+
+  const underWeeks = current.eatInWeeks.filter((w) => w.under).map((w) => w.decidedOn);
+  if (underWeeks.length) {
+    earned.set(EAT_IN_WEEK.id, {
+      def: EAT_IN_WEEK,
+      count: underWeeks.length,
+      firstOn: underWeeks[0]!,
+      lastOn: underWeeks.at(-1)!,
     });
   }
 

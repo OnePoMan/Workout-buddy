@@ -458,15 +458,20 @@ function drawExtras(d: PixelBuffer, x: RoomExtras): void {
   }
 }
 
-/** Today's counter props: Diet Dr Pepper cans on the counter, snack wrappers on the table. */
+/**
+ * Counter props: today's Diet Dr Pepper cans on the counter and snack wrappers
+ * on the table, and this week's eating out as fries on the windowsill.
+ */
 export interface RoomProps {
   cans: number;
   wrappers: number;
+  fries?: number;
 }
 
-export const NO_PROPS: RoomProps = { cans: 0, wrappers: 0 };
+export const NO_PROPS: RoomProps = { cans: 0, wrappers: 0, fries: 0 };
 export const MAX_VISIBLE_CANS = 10;
 export const MAX_VISIBLE_WRAPPERS = 10;
+export const MAX_VISIBLE_FRIES = 6;
 /** The table layer starts this far above the tabletop so wrappers can sit on it. */
 export const TABLE_PAD = 6;
 export const TABLE_LAYER_Y = TABLE_Y - TABLE_PAD;
@@ -474,6 +479,10 @@ export const TABLE_LAYER_Y = TABLE_Y - TABLE_PAD;
 // Diet Dr Pepper: silver can with a maroon band.
 const CAN = ['.sss.', 'oWWWo', 'oMMMo', 'oMWMo', 'oMMMo', 'oWWWo', 'oSSSo', '.ooo.'];
 const CAN_PAL = { o: C.ink, s: P.steel, S: P.steel_d, W: P.steel_l, M: hex('8a1a3a') };
+
+// Fries: red carton with a little golden M, golden fries poking out.
+const FRIES = ['.y.Y.y.', 'yYyyYyY', 'oyyYyyo', 'orrrrro', 'orgrgro', 'ogrgrgo', '.orrro.', '..ooo..'];
+const FRIES_PAL = { o: C.ink, r: C.red, g: C.gold, y: hex('ffd23f'), Y: hex('fff3a8') };
 
 const WRAPPER = ['.o.ooo.', 'oaabbao', 'oabaabo', '.ooooo.'];
 const WRAPPER_COLOURS: readonly [string, string][] = [
@@ -498,6 +507,25 @@ export function wrapperPositions(n: number): [number, number][] {
   for (let i = 0; i < 5; i++) out.push([5 + i * 8, TABLE_PAD + 2 + (i % 2)]);
   for (let i = 0; i < 5; i++) out.push([9 + i * 8, TABLE_PAD - 1 + (i % 2)]);
   return out.slice(0, Math.min(n, MAX_VISIBLE_WRAPPERS));
+}
+
+/**
+ * Fries bottoms on the windowsill: a row of four right of the cactus, then two
+ * stacked behind. Kept clear of the curtains and the flickering neon sign.
+ */
+export function friesPositions(n: number): [number, number][] {
+  const sill = WINDOW.y1 + 3;
+  const out: [number, number][] = [];
+  for (let i = 0; i < 4; i++) out.push([28 + i * 8, sill]);
+  for (let i = 0; i < 2; i++) out.push([40 + i * 8, sill - 6]);
+  return out.slice(0, Math.min(n, MAX_VISIBLE_FRIES));
+}
+
+function drawFries(d: PixelBuffer, n: number): void {
+  const fries = sprite(FRIES, FRIES_PAL);
+  // Back row first so the front row overlaps it.
+  const pos = friesPositions(n);
+  for (const [x, y] of [...pos.slice(4), ...pos.slice(0, 4)]) d.blit(fries, x, y - fries.height + 1);
 }
 
 function drawCans(d: PixelBuffer, n: number): void {
@@ -566,7 +594,8 @@ const LAYER_CACHE_SIZE = 4;
 export function roomLayers(props: RoomProps = NO_PROPS, extras: RoomExtras = NO_EXTRAS): RoomLayers {
   const cans = Math.max(0, Math.min(props.cans, MAX_VISIBLE_CANS));
   const wrappers = Math.max(0, Math.min(props.wrappers, MAX_VISIBLE_WRAPPERS));
-  const key = `${cans}:${wrappers}:${JSON.stringify(extras)}`;
+  const fries = Math.max(0, Math.min(props.fries ?? 0, MAX_VISIBLE_FRIES));
+  const key = `${cans}:${wrappers}:${fries}:${JSON.stringify(extras)}`;
   const hit = layerCache.get(key);
   if (hit) return hit;
 
@@ -574,6 +603,7 @@ export function roomLayers(props: RoomProps = NO_PROPS, extras: RoomExtras = NO_
   const back = sp.back.clone();
   drawExtras(back, extras);
   drawCans(back, cans);
+  drawFries(back, fries);
   const tbl = new PixelBuffer(sp.table.width, sp.table.height + TABLE_PAD);
   tbl.blit(sp.table, 0, TABLE_PAD);
   drawWrappers(tbl, wrappers);

@@ -1,4 +1,4 @@
-import { COUNTERS, counterTotal } from './counters';
+import { COUNTERS, EATING_OUT, counterTotal, weekTotal } from './counters';
 import { exerciseFor, inSeason } from './schedule';
 import { isComplete, pendingMakeups } from './sessions';
 import type { LogicalDay, SaveFile } from './types';
@@ -12,17 +12,23 @@ export interface Mood {
   /** Today's counter totals, shown as props in the room. */
   cans: number;
   wrappers: number;
+  /** This week's eating out, shown as fries on the windowsill. */
+  fries: number;
 }
 
 /**
  * The character's pose and face for today (SPEC §6.1). Face priority:
- * over a cap > completed a session today > make-ups pending > rest day > idle.
+ * over a daily cap or the weekly eating-out limit > completed a session today >
+ * make-ups pending > rest day > idle.
  */
 export function characterMood(save: SaveFile, today: LogicalDay): Mood {
   const { settings, sessions, counters } = save;
   const season = inSeason(today, settings);
   const rest = !season || exerciseFor(today) === null;
-  const overCap = COUNTERS.some((c) => counterTotal(counters, c.id, today) > (settings.caps[c.id] ?? c.defaultCap));
+  const fries = weekTotal(counters, EATING_OUT.id, today);
+  const overCap =
+    COUNTERS.some((c) => counterTotal(counters, c.id, today) > (settings.caps[c.id] ?? c.defaultCap)) ||
+    fries > (settings.caps[EATING_OUT.id] ?? EATING_OUT.defaultCap);
   const completedToday = sessions.some((s) => s.loggedOn === today && isComplete(s));
   const pending = season && pendingMakeups(today, settings, sessions).length > 0;
 
@@ -36,6 +42,7 @@ export function characterMood(save: SaveFile, today: LogicalDay): Mood {
     face,
     cans: counterTotal(counters, 'dr_pepper', today),
     wrappers: counterTotal(counters, 'snacks', today),
+    fries,
   };
 }
 
@@ -44,6 +51,7 @@ export function describeMood(mood: Mood): string {
     mood.cans ? `${mood.cans} can${mood.cans === 1 ? '' : 's'} of Diet Dr Pepper on the counter` : '',
     mood.wrappers ? `${mood.wrappers} snack wrapper${mood.wrappers === 1 ? '' : 's'} on the table` : '',
   ].filter(Boolean);
+  const week = mood.fries ? ` This week: ${mood.fries} order${mood.fries === 1 ? '' : 's'} of fries on the windowsill.` : '';
   const where = mood.pose === 'sit' ? 'relaxing at the table' : 'standing in the apartment';
   const faces: Record<Face, string> = {
     normal: 'ready to go',
@@ -53,5 +61,5 @@ export function describeMood(mood: Mood): string {
     smile: 'smiling',
   };
   const scene = `Your character is ${where}, ${faces[mood.face]}.`;
-  return props.length ? `${scene} Today: ${props.join(' and ')}.` : scene;
+  return (props.length ? `${scene} Today: ${props.join(' and ')}.` : scene) + week;
 }

@@ -22,7 +22,7 @@ expected to change after playtesting.
 - Five stats with Persona-style ranks.
 - Achievements and tiered reward animations.
 - Room and outfit unlocks.
-- Soft-cap counters for Diet Dr Pepper and snacks.
+- Soft-cap counters for Diet Dr Pepper and snacks, and a weekly eating-out limit.
 - A weekly consistency heatmap and a personal-best board.
 - A season that ends 2026-12-31, with a finale.
 - Installable from the browser (PWA), works offline, and stores data only on the device.
@@ -194,6 +194,8 @@ This module is the main target for unit tests.
 | `rank_<stat>_<n>` | RANK UP | Any stat reaches a new rank | T2 rank-up bar |
 | `cap_7` | IRON WILL | 7 days in a row qualifying for DISCIPLINE | T2 |
 | `mile_improve_30` | SPEED DEMON | Run pace 30 s/mi faster than the first run | T2 |
+| `eat_in_week` | HOLD THE FRIES | Each week at or under the eating-out limit (repeatable, see 7.1) | T2 |
+| `eat_in_4/8/12` | HOME COOKING / MEAL PREPPER / MASTER CHEF | 4, 8, 12 such weeks in a row | T2 |
 | `season_complete` | FALL 2026 CLEAR | Season ends, shown with a summary | T4 |
 
 Repeatable achievements store how many times they were earned. Each one-time
@@ -299,6 +301,10 @@ achievement stores the date it was earned and a `seen` flag.
 - *(As built in M5)* Cans stand in a 4-3-2-1 pyramid on the counter and
   wrappers lie on the tablecloth (chips, candy and granola colours in turn).
   Up to 10 of each are drawn; the counter shows the true total.
+- Each eating-out meal logged this week shows as a McDonald's-style fries
+  carton (red box, small golden M) on the windowsill, right of the cactus.
+  The fries stay all week and clear at Monday's rollover. Up to 6 are drawn
+  (a row of 4, then 2 behind); the counter shows the true total.
 
 ---
 
@@ -321,7 +327,32 @@ achievement stores the date it was earned and a `seen` flag.
   - The only consequence is losing that day's DISCIPLINE points.
 - A "Nothing today" button records an explicit zero for both counters
   (see 4.3).
-- The data model supports any number of counters. The v1 UI shows these two.
+- The data model supports any number of counters. The v1 UI shows these two
+  daily counters plus the weekly one in 7.1.
+
+### 7.1 Weekly eating-out limit
+
+| Counter | Unit | Default limit |
+|---|---|---|
+| Eating out | meal | 1 per week |
+
+- Home has a THIS WEEK card with +/− and the week's history (each entry shows
+  its weekday and time; UNDO LAST works all week).
+- The total runs Monday–Sunday by logical day and persists across days and app
+  restarts. It resets at Monday's rollover (03:00 by default). Entries are
+  ordinary counter entries with `counterId: "eating_out"`; the week total is
+  derived from them, so nothing is deleted at the reset.
+- The limit is editable in Settings under WEEKLY LIMITS, from 0 to 20.
+- Going over the limit turns the counter red and the character side-eyes for
+  the rest of that week. It does not affect DISCIPLINE, streaks or points, and
+  it does not count toward "Nothing today".
+- **Achievements:** a week is judged when it ends (the Monday after, or the day
+  after the season ends). Only full Monday–Sunday weeks inside the season count,
+  as with PERFECT WEEK, and only weeks where something was logged (a session, a
+  counter entry or "Nothing today"), so idle weeks earn nothing. A judged week at
+  or under the limit earns HOLD THE FRIES; consecutive ones build toward the
+  4/8/12-week achievements. An idle or over-limit week breaks the run.
+  Changing the limit re-judges past weeks, like caps for DISCIPLINE.
 
 ---
 
@@ -484,7 +515,7 @@ interface SessionLog {
 
 interface CounterEntry {
   id: string;
-  counterId: "dr_pepper" | "snacks" | string;
+  counterId: "dr_pepper" | "snacks" | "eating_out" | string;
   day: LogicalDay;
   at: string;                        // ISO timestamp
   delta: 1 | -1;

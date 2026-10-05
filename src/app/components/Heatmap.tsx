@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { COUNTERS, counterTotal } from '../../domain/counters';
+import { COUNTERS, WEEKLY_COUNTERS, counterTotal, weekTotal } from '../../domain/counters';
 import { dayLabel } from '../../domain/dates';
 import { STATE_LABEL, buildHeatmap, type HeatCell } from '../../domain/heatmap';
 import { DISCIPLINE_POINTS } from '../../domain/rules';
@@ -152,6 +152,21 @@ function DayDetail({ cell }: { cell: HeatCell }) {
               <span>{c.label}</span>
               <span className={`mono${total > cap ? ' is-over-text' : ''}`}>
                 {total} / {cap}
+              </span>
+            </li>
+          );
+        })}
+        {WEEKLY_COUNTERS.map((c) => {
+          const week = weekTotal(save.counters, c.id, cell.day);
+          const cap = save.settings.caps[c.id] ?? c.defaultCap;
+          return (
+            <li key={c.id}>
+              <span>
+                {c.label}
+                <small className="ach-desc">This day: {counterTotal(save.counters, c.id, cell.day)}</small>
+              </span>
+              <span className={`mono${week > cap ? ' is-over-text' : ''}`}>
+                WEEK {week} / {cap}
               </span>
             </li>
           );

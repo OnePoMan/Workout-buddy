@@ -1,4 +1,4 @@
-import { COUNTERS } from './counters';
+import { COUNTERS, EATING_OUT, isWeeklyCounter } from './counters';
 import { addDays, weekStart } from './dates';
 import {
   DISCIPLINE_POINTS,
@@ -59,6 +59,17 @@ export interface PbEvent {
   timeSec?: number;
 }
 
+/** One full in-season week judged against the eating-out limit. */
+export interface EatInWeek {
+  start: LogicalDay;
+  total: number;
+  cap: number;
+  /** At or under the limit. */
+  under: boolean;
+  /** The day the week was decided: the Monday after it, or the day after the season ends. */
+  decidedOn: LogicalDay;
+}
+
 export interface StatStatus {
   points: number;
   rank: number;
@@ -86,6 +97,11 @@ export interface Snapshot {
   disciplineDays: LogicalDay[];
   disciplineRun: number;
   longestDisciplineRun: number;
+  /** Ended full weeks with any activity, judged against the eating-out limit. */
+  eatInWeeks: EatInWeek[];
+  /** Current and longest run of consecutive weeks at or under the limit. */
+  eatInRun: number;
+  longestEatInRun: number;
 }
 
 /** Sessions that count: slot inside the season and logged on or before `asOf`. */
@@ -222,6 +238,8 @@ function discipline(save: SaveFile, asOf: LogicalDay) {
   // day -> counterId -> running sum, built once instead of rescanning entries per day.
   const sums = new Map<LogicalDay, Map<string, number>>();
   for (const e of counters) {
+    // Weekly counters are judged per week (eatIn), not per day.
+    if (isWeeklyCounter(e.counterId)) continue;
     const day = sums.get(e.day) ?? new Map<string, number>();
     day.set(e.counterId, (day.get(e.counterId) ?? 0) + e.delta);
     sums.set(e.day, day);
@@ -243,6 +261,45 @@ function discipline(save: SaveFile, asOf: LogicalDay) {
   return { days, run, longest };
 }
 
+/**
+ * Weekly eating-out limit (SPEC §7.1). A week is judged once it ends, and only
+ * if it is a full Monday–Sunday week inside the season (like PERFECT WEEK) in
+ * which something was logged, so idle weeks earn nothing. Any other judged
+ * week, including one over the limit, breaks the run.
+ */
+function eatIn(save: SaveFile, asOf: LogicalDay) {
+  const { settings, sessions, counters, confirmedZeroDays } = save;
+  const cap = settings.caps[EATING_OUT.id] ?? EATING_OUT.defaultCap;
+  const weeks: EatInWeek[] = [];
+  let run = 0;
+  let longest = 0;
+  const totals = new Map<LogicalDay, number>();
+  const active = new Set<LogicalDay>();
+  for (const e of counters) {
+    const w = weekStart(e.day);
+    active.add(w);
+    if (e.counterId === EATING_OUT.id) totals.set(w, (totals.get(w) ?? 0) + e.delta);
+  }
+  for (const s of sessions) active.add(weekStart(s.loggedOn));
+  for (const d of confirmedZeroDays) active.add(weekStart(d));
+
+  for (let w = weekStart(settings.seasonStart); w <= settings.seasonEnd; w = addDays(w, 7)) {
+    const decidedOn = addDays(w, 7);
+    if (decidedOn > asOf) break;
+    if (w < settings.seasonStart || addDays(w, 6) > settings.seasonEnd) continue;
+    if (!active.has(w)) {
+      run = 0;
+      continue;
+    }
+    const total = Math.max(0, totals.get(w) ?? 0);
+    const under = total <= cap;
+    weeks.push({ start: w, total, cap, under, decidedOn });
+    run = under ? run + 1 : 0;
+    longest = Math.max(longest, run);
+  }
+  return { weeks, run, longest };
+}
+
 /** Everything derived from the save as it stood at the end of `asOf` (SPEC §4). */
 export function snapshot(save: SaveFile, asOf: LogicalDay): Snapshot {
   const sessions = countedSessions(save, asOf);
@@ -250,6 +307,7 @@ export function snapshot(save: SaveFile, asOf: LogicalDay): Snapshot {
   const walk = walkWeeks(save, asOf, byslot);
   const pb = personalBests(sessions);
   const disc = discipline(save, asOf);
+  const eat = eatIn(save, asOf);
 
   const points: Record<Stat, number> = { strength: 0, back: 0, legs: 0, stamina: 0, discipline: 0 };
   const completedByExercise: Record<Exercise, number> = { pushups: 0, pullups: 0, squats: 0, run: 0 };
@@ -290,5 +348,8 @@ export function snapshot(save: SaveFile, asOf: LogicalDay): Snapshot {
     disciplineDays: disc.days,
     disciplineRun: disc.run,
     longestDisciplineRun: disc.longest,
+    eatInWeeks: eat.weeks,
+    eatInRun: eat.run,
+    longestEatInRun: eat.longest,
   };
 }

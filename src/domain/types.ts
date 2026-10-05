@@ -5,7 +5,7 @@ export type Exercise = 'pushups' | 'pullups' | 'squats' | 'run';
 
 export const EXERCISES: readonly Exercise[] = ['pushups', 'pullups', 'squats', 'run'];
 
-export type CounterId = 'dr_pepper' | 'snacks';
+export type CounterId = 'dr_pepper' | 'snacks' | 'eating_out';
 
 export type ReduceMotion = 'system' | 'on' | 'off';
 

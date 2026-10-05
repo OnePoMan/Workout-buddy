@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { changeCounter, toggleNothingToday } from '../actions';
-import { COUNTERS, counterTotal, dayHasEntries, type CounterDef } from '../../domain/counters';
-import { dayLabel } from '../../domain/dates';
+import { COUNTERS, WEEKLY_COUNTERS, counterTotal, dayHasEntries, weekTotal, type CounterDef } from '../../domain/counters';
+import { addDays, dayLabel, weekStart } from '../../domain/dates';
 import { characterMood } from '../../domain/mood';
 import { FREEZE_CAP } from '../../domain/rules';
 import { EXERCISE_LABEL, formatTarget, slotFor, type Slot } from '../../domain/schedule';
@@ -51,6 +51,8 @@ export function Home({ today, onLog }: Props) {
       )}
 
       <Counters today={today} />
+
+      <WeeklyCounters today={today} />
     </div>
   );
 }
@@ -206,6 +208,62 @@ function Counters({ today }: { today: LogicalDay }) {
         {confirmedZero && !hasEntries ? 'NOTHING TODAY ✓' : 'NOTHING TODAY'}
       </button>
       <p className="hint">Tap or hold a counter for today's history and undo.</p>
+      {historyFor && <CounterHistory counter={historyFor} day={today} onClose={closeHistory} />}
+    </section>
+  );
+}
+
+function WeeklyCounters({ today }: { today: LogicalDay }) {
+  const store = useStoreApi();
+  const { settings, counters } = useSave();
+  const [historyFor, setHistoryFor] = useState<CounterDef | null>(null);
+  const closeHistory = useCallback(() => setHistoryFor(null), []);
+  const resetsOn = addDays(weekStart(today), 7);
+  const hour = String(settings.rolloverHour).padStart(2, '0');
+
+  return (
+    <section className="card" aria-label="Weekly counters">
+      <p className="card-kicker">THIS WEEK</p>
+      {WEEKLY_COUNTERS.map((c) => {
+        const total = weekTotal(counters, c.id, today);
+        const cap = settings.caps[c.id] ?? c.defaultCap;
+        const over = total > cap;
+        return (
+          <div key={c.id} className={`counter${over ? ' is-over' : ''}`}>
+            <button
+              type="button"
+              className="counter-open"
+              aria-label={`${c.label}: ${total} of ${cap} this week. Show this week's history`}
+              onClick={() => setHistoryFor(c)}
+            >
+              <span className="counter-label">{c.label}</span>
+              <span className="counter-value mono" aria-live="polite">
+                {total} / {cap}
+              </span>
+            </button>
+            <button
+              type="button"
+              className="btn btn-square"
+              aria-label={`Remove one ${c.unit}`}
+              disabled={total === 0}
+              onClick={() => changeCounter(store, c.id, today, -1)}
+            >
+              −
+            </button>
+            <button
+              type="button"
+              className="btn btn-square"
+              aria-label={`Add one ${c.unit}`}
+              onClick={() => changeCounter(store, c.id, today, 1)}
+            >
+              +
+            </button>
+          </div>
+        );
+      })}
+      <p className="hint">
+        Weekly limit. Resets {dayLabel(resetsOn)} at {hour}:00. Stay at or under it for HOLD THE FRIES.
+      </p>
       {historyFor && <CounterHistory counter={historyFor} day={today} onClose={closeHistory} />}
     </section>
   );

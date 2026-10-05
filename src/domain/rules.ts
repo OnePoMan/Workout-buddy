@@ -41,6 +41,8 @@ export const MAX_RANK = RANK_THRESHOLDS.length;
 
 export const STREAK_MILESTONES: readonly number[] = [6, 12, 24, 48];
 export const CAP_RUN_DAYS = 7;
+/** Weeks in a row at or under the eating-out limit for the HOME COOKING achievements. */
+export const EAT_IN_MILESTONES: readonly number[] = [4, 8, 12];
 /** Seconds per mile faster than the first run, for SPEED DEMON. */
 export const MILE_IMPROVE_SEC = 30;
 

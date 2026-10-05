@@ -77,6 +77,7 @@ const ICONS: Record<Exclude<BadgeIcon, 'star' | 'record'>, string[]> = {
   streak: ['...o...', '..oro..', '.orrro.', '.oryro.', 'orryyro', 'oryyyro', '.oryro.', '..ooo..'],
   week: ['......o', '.....oo', 'o...oo.', 'oo.oo..', '.ooo...', '..o....'],
   flag: ['oooooo', 'oWWoWo', 'oWoWWo', 'oWWoWo', 'oooooo', 'o.....', 'o.....', 'o.....'],
+  fries: ['.y.y.y.', 'yyyyyyy', 'oyyyyyo', 'orrrrro', 'oryryro', 'oyryryo', '.orrro.', '..ooo..'],
 };
 
 export type { BadgeIcon };

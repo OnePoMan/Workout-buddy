@@ -1,4 +1,4 @@
-import { CAP_MAX, CAP_MIN, COUNTERS } from './counters';
+import { CAP_MAX, CAP_MIN, COUNTERS, WEEKLY_COUNTERS } from './counters';
 import type { Exercise, LogicalDay, Settings } from './types';
 
 export const SEASON_END: LogicalDay = '2026-12-31';
@@ -32,7 +32,7 @@ export function defaultSettings(today: LogicalDay): Settings {
     seasonEnd: SEASON_END,
     rolloverHour: DEFAULT_ROLLOVER_HOUR,
     targets: { ...DEFAULT_TARGETS },
-    caps: Object.fromEntries(COUNTERS.map((c) => [c.id, c.defaultCap])),
+    caps: Object.fromEntries([...COUNTERS, ...WEEKLY_COUNTERS].map((c) => [c.id, c.defaultCap])),
     sound: false,
     reduceMotion: 'system',
     hair: 'auto',

@@ -6,7 +6,7 @@ import { EXERCISE_LABEL } from './schedule';
 import type { Exercise } from './types';
 import { unlocksFor } from './unlocks';
 
-export type RewardIcon = 'star' | 'record' | 'streak' | 'week' | 'flag';
+export type RewardIcon = 'star' | 'record' | 'streak' | 'week' | 'flag' | 'fries';
 
 /** Every item carries the earnings it marks as seen once shown or skipped. */
 export type RewardItem =
@@ -102,6 +102,7 @@ function iconFor(e: Earned): RewardIcon {
   if (e.def.id.startsWith('streak_')) return 'streak';
   if (e.def.id === 'perfect_week') return 'week';
   if (e.def.id === 'season_complete') return 'flag';
+  if (e.def.id.startsWith('eat_in_')) return 'fries';
   return 'star';
 }
 
